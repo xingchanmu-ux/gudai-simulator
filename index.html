@@ -1,0 +1,1466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>架空古代人生模拟器</title>
+<style>
+:root {
+  --bg: #0A0A0A;
+  --panel: #1A1A1A;
+  --border: #8B1A1A;
+  --primary: #C0392B;
+  --accent: #E74C3C;
+  --text: #E8E0D0;
+  --muted: #7F8C8D;
+  --dark-red: #922B21;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  line-height: 1.8;
+}
+#app {
+  width: 100%;
+  max-width: 520px;
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+.screen {
+  display: none;
+  flex-direction: column;
+  padding: 24px 20px;
+  flex: 1;
+  animation: fadeIn 0.3s ease;
+}
+.screen.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes bloodIn { from { color: #4A0E0E; opacity: 0.3; } to { color: var(--accent); opacity: 1; } }
+.btn {
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  margin: 8px 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 16px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  letter-spacing: 2px;
+}
+.btn:hover, .btn:active { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.title {
+  text-align: center;
+  color: var(--primary);
+  font-size: 28px;
+  font-weight: bold;
+  letter-spacing: 8px;
+  margin: 20px 0;
+}
+.title .diamond { display: block; color: var(--border); font-size: 14px; letter-spacing: 0; margin: 8px 0; }
+.subtitle { text-align: center; color: var(--muted); font-size: 12px; margin: 10px 0; }
+.event-title { color: var(--border); font-size: 18px; font-weight: bold; margin-bottom: 12px; animation: slideIn 0.3s ease; }
+.event-text { color: var(--text); font-size: 16px; margin-bottom: 16px; white-space: pre-wrap; animation: slideIn 0.3s ease 0.1s both; }
+.option {
+  display: block; width: 100%; padding: 12px 14px; margin: 8px 0;
+  background: transparent; border: 1px solid #2A2A2A; color: var(--text);
+  font-size: 15px; font-family: inherit; cursor: pointer; text-align: left;
+  transition: all 0.2s; animation: slideIn 0.3s ease;
+}
+.option:hover, .option:active { border-color: var(--accent); color: var(--accent); padding-left: 20px; }
+.stats-bar { background: var(--bg); border-bottom: 1px solid var(--border); padding: 10px 16px; font-size: 13px; position: sticky; top: 0; z-index: 10; }
+.stats-bar .name-row { color: var(--text); margin-bottom: 4px; }
+.stats-bar .stat-row { color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px; }
+.result-text { color: var(--text); margin: 12px 0; white-space: pre-wrap; animation: slideIn 0.3s ease; }
+.effect-text { color: var(--accent); font-size: 14px; margin: 6px 0 12px; }
+.easter-egg { color: var(--dark-red); font-style: italic; font-size: 14px; margin: 8px 0; animation: pulse 1s ease 2; }
+.ending-title { text-align: center; color: var(--accent); font-size: 24px; font-weight: bold; margin: 16px 0; animation: bloodIn 1s ease; }
+.hidden-title { text-align: center; color: var(--primary); font-size: 18px; font-weight: bold; margin: 10px 0 4px; font-style: italic; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.ending-stats { color: var(--text); margin: 8px 0; }
+.ending-history { color: var(--muted); font-size: 13px; margin: 8px 0; }
+.history-item { padding: 12px; border: 1px solid #2A2A2A; margin: 8px 0; cursor: pointer; }
+.history-item:hover { border-color: var(--border); }
+.history-item .h-title { color: var(--accent); font-weight: bold; }
+.history-item .h-detail { color: var(--muted); font-size: 13px; }
+.role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+.role-btn { padding: 16px; background: var(--panel); border: 1px solid var(--border); color: var(--text); font-size: 16px; font-family: inherit; cursor: pointer; letter-spacing: 4px; transition: all 0.2s; }
+.role-btn:hover { border-color: var(--accent); color: var(--accent); }
+.role-btn.played { color: var(--border); }
+.input-field { width: 100%; padding: 10px 12px; margin: 6px 0; background: var(--panel); border: 1px solid var(--border); color: var(--text); font-size: 16px; font-family: inherit; outline: none; }
+.input-field:focus { border-color: var(--accent); }
+.label { color: var(--muted); font-size: 13px; margin-top: 10px; }
+.scroll-area { flex: 1; overflow-y: auto; padding: 16px 0; }
+.bottom-btns { padding: 12px 0; border-top: 1px solid #2A2A2A; }
+.spinning-text { text-align: center; color: var(--accent); font-size: 24px; font-weight: bold; letter-spacing: 4px; animation: pulse 0.15s ease infinite; margin: 30px 0; }
+/* 访问码 */
+.gate { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; text-align: center; }
+.gate h1 { color: var(--primary); font-size: 24px; letter-spacing: 6px; margin-bottom: 8px; }
+.gate p { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+.gate input { letter-spacing: 4px; text-align: center; text-transform: uppercase; max-width: 260px; }
+.gate .hint { color: var(--dark-red); font-size: 12px; margin-top: 12px; min-height: 16px; }
+.intro-box { text-align: center; }
+.intro-box .row { color: var(--text); font-size: 17px; margin: 6px 0; }
+.intro-box .role-line { color: var(--accent); font-size: 20px; font-weight: bold; margin: 14px 0; letter-spacing: 4px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 访问码 -->
+  <div class="gate" id="gate">
+    <h1>架 空 古 代</h1>
+    <p>人生模拟器 · 请输入访问码</p>
+    <input class="input-field" id="gate-input" maxlength="8" placeholder="8 位访问码" autocomplete="off">
+    <button class="btn" style="max-width:260px;" onclick="checkGate()">进 入</button>
+    <div class="hint" id="gate-hint"></div>
+  </div>
+
+  <!-- 主页 -->
+  <div class="screen" id="screen-home">
+    <div style="text-align:center; padding-top:30px;">
+      <div class="title">
+        <span class="diamond">◆</span>
+        架 空 古 代<br>人 生 模 拟 器
+        <span class="diamond">◆</span>
+      </div>
+    </div>
+    <div class="scroll-area" style="display:flex; flex-direction:column; justify-content:center;">
+      <button class="btn" onclick="drawFate()">✦ 抽取命运</button>
+      <button class="btn" onclick="showHistory()">◈ 历史结局</button>
+      <button class="btn" id="btn-select-role" onclick="showRoleSelect()" disabled>◆ 开始新局</button>
+      <p class="subtitle" id="round-hint">（前 3 轮随机命运，之后可自选身份）</p>
+    </div>
+  </div>
+
+  <!-- 抽取命运 -->
+  <div class="screen" id="screen-draw">
+    <div style="text-align:center; padding-top:40px;">
+      <p class="subtitle" style="font-size:16px; color:var(--border);">命 运 之 轮 转 动</p>
+      <div class="spinning-text" id="spinning-role">皇帝</div>
+      <p class="subtitle" id="draw-result" style="display:none;"></p>
+    </div>
+    <div class="scroll-area"></div>
+    <div class="bottom-btns">
+      <button class="btn" id="btn-to-name" onclick="goToName()" style="display:none;">设定姓名和字</button>
+    </div>
+  </div>
+
+  <!-- 设定姓名 -->
+  <div class="screen" id="screen-name">
+    <div class="scroll-area">
+      <h2 style="color:var(--primary); text-align:center; margin-bottom:20px;">请为自己取名</h2>
+      <p class="label">姓</p>
+      <input class="input-field" id="input-surname" placeholder="如：沈" maxlength="2">
+      <p class="label">名</p>
+      <input class="input-field" id="input-givenname" placeholder="如：青梧" maxlength="2">
+      <p class="label">字（可留空，自动生成）</p>
+      <input class="input-field" id="input-courtesy" placeholder="如：明远" maxlength="2">
+      <p class="subtitle">（留空则自动生成）</p>
+    </div>
+    <div class="bottom-btns">
+      <button class="btn" onclick="startGame()">开始新局</button>
+    </div>
+  </div>
+
+  <!-- 角色选择 -->
+  <div class="screen" id="screen-roles">
+    <div class="scroll-area">
+      <h2 style="color:var(--primary); text-align:center; margin-bottom:16px;">选择身份</h2>
+      <div class="role-grid" id="role-grid"></div>
+    </div>
+    <div class="bottom-btns">
+      <button class="btn" onclick="goHome()">← 返回主页</button>
+    </div>
+  </div>
+
+  <!-- 开局信息 -->
+  <div class="screen" id="screen-intro">
+    <div class="scroll-area">
+      <div class="intro-box" id="intro-box"></div>
+    </div>
+    <div class="bottom-btns">
+      <button class="btn" onclick="beginPlay()">［开 始］</button>
+    </div>
+  </div>
+
+  <!-- 游戏主界面 -->
+  <div class="screen" id="screen-game">
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="scroll-area" id="game-content"></div>
+    <div class="bottom-btns" id="game-btns"></div>
+  </div>
+
+  <!-- 结局 -->
+  <div class="screen" id="screen-ending">
+    <div class="scroll-area" id="ending-content"></div>
+    <div class="bottom-btns">
+      <button class="btn" onclick="goHome()">← 返回主页</button>
+      <button class="btn" onclick="drawFate()">↻ 再来一局</button>
+    </div>
+  </div>
+
+  <!-- 历史结局 -->
+  <div class="screen" id="screen-history">
+    <div class="scroll-area" id="history-content"></div>
+    <div class="bottom-btns">
+      <button class="btn" onclick="goHome()">← 返回主页</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+const ACCESS_CODE = "QF4M7XK9";
+
+// ========== 字库 ==========
+const SURNAMES = ["沈","林","苏","顾","陆","萧","陈","李","王","张","赵","周","吴","郑","楚","宋","江","温","裴","谢","叶","韩","秦","许","何"];
+const GIVENNAMES = ["青梧","明远","长安","归舟","听澜","怀瑾","清辞","鹤鸣","听雪","南风","砚秋","望舒","知微","长歌","云深","拾光","无咎","行止","景行","兰因"];
+const COURTESY = {
+  male: ["子安","明远","修文","仲达","伯言","公瑾","元直","季常","少卿","德润"],
+  female: ["清照","若兰","静姝","素心","明仪","婉清","云舒","月华","玉衡","采薇"],
+  neutral: ["子期","忘机","怀瑾","守拙","知白","抱朴","凌虚","观澜","问舟","栖梧"]
+};
+
+// ========== 角色 ==========
+const ROLES = {
+  emperor:  { name: '皇帝', initial: { power: 30, fame: 35, wealth: 25, mind: 45 }, genderRelevant: true },
+  xia:      { name: '侠士', initial: { power: 15, fame: 25, wealth: 15, mind: 55 }, genderRelevant: true },
+  merchant: { name: '商贾', initial: { power: 15, fame: 20, wealth: 40, mind: 45 }, genderRelevant: true },
+  official:{ name: '文官', initial: { power: 20, fame: 30, wealth: 20, mind: 50 }, genderRelevant: false },
+  general: { name: '武将', initial: { power: 30, fame: 25, wealth: 15, mind: 50 }, genderRelevant: true },
+  hermit:   { name: '隐士', initial: { power: 10, fame: 25, wealth: 20, mind: 60 }, genderRelevant: false },
+  artisan:  { name: '工匠', initial: { power: 15, fame: 20, wealth: 20, mind: 50 }, genderRelevant: false },
+  doctor:   { name: '医者', initial: { power: 15, fame: 30, wealth: 20, mind: 50 }, genderRelevant: false },
+  actor:    { name: '伶人', initial: { power: 10, fame: 25, wealth: 20, mind: 50 }, genderRelevant: false },
+  farmer:   { name: '农民', initial: { power: 10, fame: 20, wealth: 15, mind: 50 }, genderRelevant: false }
+};
+const STAT_NAMES = { power: '权势', fame: '名望', wealth: '财富', mind: '心境' };
+const STAT_ICONS = { power: '⚔', fame: '⚘', wealth: '❖', mind: '☯' };
+const ROLE_KEYS = Object.keys(ROLES);
+
+// ========== 核心事件 ==========
+const CORE_EVENTS = {
+  emperor: [
+    { title: '登基大典', text: '礼部请示是否大赦天下。', options: [
+      { text: '大赦天下，减免赋税', effects: { fame: 8, wealth: -8, mind: 5 }, result: '万民称颂，但国库更紧了。' },
+      { text: '只赦轻罪，赋税照旧', effects: { power: 5, fame: 3 }, result: '老臣赞你稳重。' },
+      { text: '不赦反严，立威于朝', effects: { power: 12, fame: -10, mind: -8 }, result: '民间有怨言，但百官畏惧。' }
+    ]},
+    { title: '太后干政', text: '太后想安插外戚任户部尚书。', options: [
+      { text: '应允，以孝治天下', effects: { power: -5, mind: 3, wealth: 8 }, result: '外戚带来一笔进贡，太后对你和颜悦色。' },
+      { text: '婉拒，另授虚职', effects: { power: 5, fame: 5, mind: -3 }, result: '朝臣赞你制衡有术。' },
+      { text: '怒斥，太后禁足', effects: { power: 12, fame: -5, mind: -12 }, result: '太后党怀恨，埋下隐患。' }
+    ]},
+    { title: '北境告急', text: '胡骑犯边，边关大将八百里加急求援。\n户部尚书说国库空虚，军饷无着。', options: [
+      { text: '加征"助边税"', effects: { wealth: 15, fame: -12, mind: -8 }, result: '税吏如狼似虎，民间怨声载道。' },
+      { text: '发内帑私库', effects: { wealth: -12, fame: 10, power: -3 }, result: '百姓称你为"散财天子"。' },
+      { text: '命大将自行筹措，许其开中盐引', effects: { power: -5, wealth: 8, mind: -3 }, result: '边军自此如匪，你隐隐不安。' }
+    ]},
+    { title: '前朝余党', text: '江南有人自称前朝皇裔，聚众数千。', options: [
+      { text: '招安封侯', effects: { fame: 10, power: -5, wealth: -5, mind: 3 }, result: '叛乱平息，但埋下"姑息"之讥。' },
+      { text: '派兵围剿', effects: { power: 12, wealth: -10, fame: -8, mind: -5 }, result: '捷报传来，但杀戮过重。' },
+      { text: '暗派密探分化', effects: { power: 10, wealth: -5, mind: -3 }, result: '不战而溃，但手段阴诡。' }
+    ]},
+    { title: '祥瑞与谶纬', text: '地方献白鹿，称"天命所归"。\n市井流传"帝星晦暗"童谣。', options: [
+      { text: '举办大典昭告祥瑞', effects: { fame: 10, wealth: -10, mind: 8 }, result: '百姓振奋，但国库又空了。' },
+      { text: '一笑置之，专心政务', effects: { power: 5, mind: 3 }, result: '务实派赞赏，你自己倒轻松。' },
+      { text: '追查童谣来源，诛杀传谣者', effects: { power: 10, fame: -12, mind: -8 }, result: '道路以目，你在宫中沉默了很久。' }
+    ]},
+    { title: '权力终局', text: '三大势力摊牌。\n太后党、老臣党、边将党，都在等你一个态度。', options: [
+      { text: '联合老臣，清外戚、收兵权', effects: { power: 20 }, result: '老臣们说："陛下英明。"你第一次真正握住了玉玺。', condition: { power: 45 }, failEffects: { power: -15, mind: -10 }, failResult: '老臣们把你架空。你成了最尊贵的囚徒。' },
+      { text: '联合外戚，制衡老臣与大将', effects: { power: 15, wealth: -10 }, result: '外戚得势，但暂时还听你的。', condition: { wealth: 35 }, failEffects: { power: -15, mind: -5 }, failResult: '外戚擅权，你成了橡皮图章。' },
+      { text: '联合大将，发动宫变', effects: { power: 25, fame: -10, mind: -5 }, result: '大将领兵入京，宫变成功。', condition: { fame: 45 }, failEffects: { power: -20, fame: -15, mind: -15 }, failResult: '宫变失败，天下大乱。' },
+      { text: '谁都不靠，推行新政', effects: { power: 15, fame: 10, mind: -5 }, result: '你顶住了所有压力。', condition: { mind: 55 }, failEffects: { power: -20, mind: -20 }, failResult: '众叛亲离，你一个人坐在空荡荡的大殿里。' }
+    ]}
+  ],
+  xia: [
+    { title: '初入江湖', text: '途经小镇，见恶霸强抢民女。', options: [
+      { text: '出手相救，废其武功', effects: { fame: 12, power: 3, mind: 3 }, result: '恶霸倒地哀嚎，百姓拍手称快。' },
+      { text: '报官处理', effects: { mind: -3, fame: 5, power: 3 }, result: '官府却与恶霸勾结。你站在衙门口，握紧了剑柄。' },
+      { text: '夜探恶霸府邸，取不义之财', effects: { wealth: 12, fame: -8, mind: -3 }, result: '江湖称你"黑吃黑"。你数着银子，心里不是滋味。' }
+    ]},
+    { title: '门派招揽', text: '天下第一帮"青龙会"递来请帖，邀你入会。', options: [
+      { text: '婉拒，独来独往', effects: { mind: 8, fame: 5 }, result: '青龙会表示尊重。你转身走入风雨里。' },
+      { text: '入会，谋个堂主之位', effects: { power: 12, wealth: 8, mind: -8 }, result: '你坐上了堂主的位置，也坐进了一个漩涡。' },
+      { text: '假意入会，暗中调查其勾当', effects: { power: 8, mind: -8 }, result: '你发现了惊天秘密，但没人知道你为此夜夜惊醒。' }
+    ]},
+    { title: '断剑之秘', text: '你从断剑夹层中发现半张地图，指向"天机谷"。', options: [
+      { text: '独自前往', effects: { mind: 8, power: 3 }, result: '山高路远，你走了七天七夜。' },
+      { text: '找至交好友同去', effects: { fame: 5, mind: 3 }, result: '你欠了朋友一个人情，他说："下次换你请我喝酒。"' },
+      { text: '高价卖给江湖百晓生', effects: { wealth: 25, fame: -12, mind: -5 }, result: '百晓生数银子的手停了一下，说："你以后会后悔。"' }
+    ]},
+    { title: '红颜/知己', text: '你在客栈遇到一位落难女子，自称被仇家追杀。', options: [
+      { text: '护送她到安全之处', effects: { fame: 8, mind: 8 }, result: '临别时，她给你绣了一个剑穗。' },
+      { text: '传她三招防身，各奔东西', effects: { mind: -3, fame: 5 }, result: '她后来成为一方女侠，多年后你们在江湖重逢。' },
+      { text: '怀疑有诈，暗中跟踪', effects: { power: 5, mind: -3 }, result: '你发现她身上果然有秘密。' }
+    ]},
+    { title: '正邪之辩', text: '你发现"名门正派"正秘密屠戮邪教老弱妇孺。', options: [
+      { text: '拔刀相助', effects: { fame: -18, mind: 15 }, result: '你被正道通缉，但你救下的人里，有一个孩子没哭。' },
+      { text: '装作没看见', effects: { mind: -18, fame: -5 }, result: '你转身走了。那个孩子后来成了新的邪教教主。' },
+      { text: '收集证据，公之于众', effects: { power: 8, fame: 12, mind: -3 }, result: '真相大白，你成了正道的眼中钉。' }
+    ]},
+    { title: '剑指何方', text: '前朝宝藏即将开启，各路人马齐聚，朝廷也派兵围剿。', options: [
+      { text: '夺宝，号令武林', effects: { power: 25, wealth: 25, fame: -5, mind: -3 }, result: '你拿到了宝藏，也拿到了所有仇家的名单。' },
+      { text: '毁掉宝藏，令其永不见天日', effects: { fame: 18, mind: 12, power: -8 }, result: '宝藏沉入地底，你在洞口站了很久，转身离开。' },
+      { text: '献宝于朝廷，换天下太平', effects: { power: 15, wealth: -5, fame: -15, mind: -8 }, result: '江湖骂你鹰犬，朝廷封你为"忠义侠"。' }
+    ]}
+  ],
+  merchant: [
+    { title: '第一桶金', text: '你握着三百两银子和一张旧商路图，站在码头。\n东南有海商暴利，西北有茶马古道。', options: [
+      { text: '江南贩丝绸', effects: { wealth: 12, fame: 5 }, result: '一趟下来，稳赚不赔。' },
+      { text: '西北走茶马', effects: { wealth: 25, power: 8, mind: -3 }, result: '茶马道上风雪如刀，但你赌赢了。', risk: true, riskEffects: { wealth: -15, power: 8, mind: -3 }, riskText: '风雪封路，货损过半。' },
+      { text: '京畿走后门', effects: { wealth: 15, power: 12, fame: -12, mind: -5 }, result: '银子来得快，你在酒桌上签下了自己的名字。' }
+    ]},
+    { title: '商会风云', text: '当地商会会长寿宴，你收到请柬。', options: [
+      { text: '备厚礼，结交人脉', effects: { wealth: -12, power: 12, fame: 5 }, result: '会长拍着你的肩说："后生可畏。"' },
+      { text: '不去，埋头做生意', effects: { wealth: 8, power: -5 }, result: '你省下了礼金，也错过了一场暗中的联姻。' },
+      { text: '去了但故意迟到', effects: { power: 5, fame: -8, mind: -3 }, result: '有人记住了你的名字，也记住了你的傲慢。' }
+    ]},
+    { title: '官商纠葛', text: '知府大人请你"喝茶"，暗示要入股你的生意。', options: [
+      { text: '痛快应允，分他三成利', effects: { wealth: -10, power: 15, fame: -8, mind: -3 }, result: '你有了靠山，也给自己套上了一根绳子。' },
+      { text: '装傻充愣，送点土产打发', effects: { power: -5, wealth: -5, mind: 3 }, result: '你走出知府衙门时，身后那扇门重重关上了。' },
+      { text: '收集其贪腐证据，暗中举报', effects: { fame: 12, power: 8, mind: -5 }, result: '知府倒了，你在商界的名声变得复杂。' }
+    ]},
+    { title: '天灾人祸', text: '你押运货物的路上遇到灾民流民，货物被围。', options: [
+      { text: '开仓施粥，散财济民', effects: { wealth: -18, fame: 20, mind: 12 }, result: '灾民称你"活菩萨"。你看着空空的货仓，笑了笑。' },
+      { text: '请护卫驱散，保住货物', effects: { wealth: 8, fame: -12, mind: -8 }, result: '货物保住了，可你夜里总梦见那些眼神。' },
+      { text: '招灾民中青壮以工代赈', effects: { wealth: -8, fame: 12, power: 5, mind: 5 }, result: '皆大欢喜。' }
+    ]},
+    { title: '海商诱惑', text: '海外商人找你合买海船，利润惊人，但可能血本无归。', options: [
+      { text: '投一半身家', effects: { wealth: 40, mind: -8 }, result: '你站在码头，看着船远去的方向。', risk: true, riskEffects: { wealth: -35, mind: -8 }, riskText: '船沉了，血本无归。' },
+      { text: '先派伙计去探路', effects: { wealth: 8, mind: 3 }, result: '伙计带回了好消息。' },
+      { text: '拒绝', effects: { mind: 8, fame: 5 }, result: '你睡得很安稳。' }
+    ]},
+    { title: '商道终局', text: '朝廷整顿商贾，有人密告你与海盗有染。', options: [
+      { text: '重金贿赂朝中权贵', effects: { wealth: -30, power: 20 }, result: '有惊无险，但你付出了代价。' },
+      { text: '金盆洗手，散财买平安', effects: { wealth: -999, fame: 20, mind: 20 }, result: '你散尽家财，换回一条命。' },
+      { text: '反告诬陷，对簿公堂', effects: { power: 15, fame: 10 }, result: '你赢了官司，也赢了整个商界的敬重。', condition: { power: 55 }, failEffects: { power: -20, wealth: -30, fame: -10 }, failResult: '你输了。抄家的那天，围满了人。' },
+      { text: '带着商队和家眷，扬帆出海', effects: { wealth: 10, mind: 10 }, result: '你带着商队扬帆出海，从此再没回来。', condition: { wealth: 65 }, failEffects: { wealth: -20, mind: -10 }, failResult: '船翻了。你抱着一块木板，漂了三天。' }
+    ]}
+  ],
+  official: [
+    { title: '金榜题名', text: '放榜当日，同年们拉你去酒楼庆贺，\n席间有人提议联名拜会主考官。', options: [
+      { text: '同去，谢座师提携之恩', effects: { power: 10, fame: 5 }, result: '你有了座师，也有了同党。' },
+      { text: '婉拒，说"读圣贤书，不拜私门"', effects: { fame: 10, power: -5 }, result: '有人赞你清高，有人说你不识抬举。' },
+      { text: '去，但不联名', effects: { power: 5, mind: 5 }, result: '你既全了礼数，又留了余地。' }
+    ]},
+    { title: '初入官场', text: '你被授翰林院编修。\n上司暗示你，每月需"孝敬"他五两银子。', options: [
+      { text: '照给，花钱买平安', effects: { wealth: -5, power: 5, mind: -5 }, result: '你学会了官场第一课。' },
+      { text: '不给，装听不懂', effects: { fame: 5, power: -5 }, result: '上司没再提，但你的奏折总被压在最下面。' },
+      { text: '暗中记下，留作把柄', effects: { power: 10, mind: -5 }, result: '你有一个秘密，它像一粒沙子，硌在你心里。' }
+    ]},
+    { title: '漕运大案', text: '你无意中发现漕运账目有巨大亏空，牵涉京城多位高官。', options: [
+      { text: '上奏弹劾', effects: { fame: 15, power: -10 }, result: '你上了折子，从此成了某些人的眼中钉。' },
+      { text: '按下不表，静观其变', effects: { mind: -5, power: 5 }, result: '你什么都没做，但夜里总睡不着。' },
+      { text: '匿名递折子', effects: { power: 5, fame: 5 }, result: '折子递了上去，宫里查了很久。' }
+    ]},
+    { title: '外放', text: '你被外放为县令。当地豪绅设宴，\n席间塞给你一个锦盒，打开是二百两银票。', options: [
+      { text: '收下，入乡随俗', effects: { wealth: 15, fame: -10 }, result: '你收下了，也收下了他们的期待。' },
+      { text: '当众退回，说"本县只收民心"', effects: { fame: 15, power: -5 }, result: '豪绅脸色铁青，百姓记住了你的名字。' },
+      { text: '收下后全部拿去修县学', effects: { fame: 10, wealth: 5 }, result: '县学落成那天，你在门口站了很久。' }
+    ]},
+    { title: '天灾', text: '你所在的县遭遇大旱，颗粒无收。\n朝廷赈灾银子迟迟未到。', options: [
+      { text: '开官仓放粮，事后补报', effects: { fame: 15, power: -5, wealth: -5, mind: 5 }, result: '百姓活了下来，你可能会丢掉乌纱帽。' },
+      { text: '等朝廷批复', effects: { power: 5, fame: -10, mind: -5 }, result: '朝廷批复下来时，已经饿死了三百人。' },
+      { text: '向本地富户募捐', effects: { fame: 8, wealth: 8, power: 3 }, result: '富户们捐了粮，也记下了你的名字。' }
+    ]},
+    { title: '朝堂终局', text: '你被召回京中。首辅与次辅明争暗斗，都派人来拉拢你。', options: [
+      { text: '投靠首辅', effects: { power: 20, fame: -5 }, result: '你站了队，也上了船。' },
+      { text: '投靠次辅', effects: { power: 15 }, result: '你选了一边，但不知道是不是对的一边。' },
+      { text: '两不相帮，只忠于皇帝', effects: { fame: 15, power: -10 }, result: '皇帝记住了你，但两边都把你当外人。' },
+      { text: '暗中联合清流，自成一股', effects: { power: 10, fame: 10 }, result: '你成了清流领袖，也成了所有人的靶子。' }
+    ]}
+  ],
+  general: [
+    { title: '投军', text: '到营第一天，老兵油子要你替他值夜。', options: [
+      { text: '忍了，替值', effects: { mind: -5, fame: 5 }, result: '你替他值了夜，他请你喝了一碗酒。' },
+      { text: '拒绝，说"谁的岗谁站"', effects: { power: 5, fame: -3 }, result: '你树了一个敌人，也树了一条规矩。' },
+      { text: '替值，但次日当众提起', effects: { fame: 5, power: 5 }, result: '老兵脸红了，同袍们记住了你。' }
+    ]},
+    { title: '首战', text: '敌军来犯，你第一次上阵。\n冲锋时，旁边的同袍中箭倒地。', options: [
+      { text: '死战不退', effects: { fame: 10, mind: -5 }, result: '你杀了一个，伤了两个。你的刀第一次见了血。' },
+      { text: '且战且退，寻找掩护', effects: { power: 5 }, result: '你活了下来，但有人在你背后说"怯"。' },
+      { text: '拼死救回同袍', effects: { fame: 15, mind: 5 }, result: '你背着他往回跑时，箭从你耳边擦过。' }
+    ]},
+    { title: '军功被压', text: '战后论功，你的功劳被上司压了一半，记在了他侄子头上。', options: [
+      { text: '忍了，来日方长', effects: { mind: -10, power: 5 }, result: '你什么都没说，但你没忘。' },
+      { text: '直接找上司理论', effects: { fame: 5, power: -5 }, result: '你被罚了三个月饷银。' },
+      { text: '暗暗收集证据，等时机告发', effects: { power: 10, mind: -5 }, result: '你等到了那个时机，也等来了一道暗箭。' }
+    ]},
+    { title: '孤军', text: '你奉命率三千人守城，敌军两万围城。援军迟迟不到。', options: [
+      { text: '死守，与城共存亡', effects: { fame: 15, mind: -5 }, result: '你守了二十三天，城里最后只剩三百人。' },
+      { text: '派死士突围求援', effects: { power: 5, fame: 8, mind: 3 }, result: '死士死在了半路，但求援信送了出去。' },
+      { text: '趁夜突围，保存实力', effects: { power: 8, fame: -12, mind: -3 }, result: '你突围成功，但城中的百姓……' }
+    ]},
+    { title: '杀降之议', text: '你俘虏了三千敌军，主将说粮草不足，提议坑杀。', options: [
+      { text: '反对，放归', effects: { fame: 15, mind: 5 }, result: '你放走了三千人，他们说会回来报恩。' },
+      { text: '默许', effects: { power: 10, fame: -20, mind: -10 }, result: '那三千人再没出现在战场上。' },
+      { text: '整编为先锋营', effects: { power: 10, fame: 5, mind: -3 }, result: '降兵成了你的先锋营，他们比谁都拼命。' }
+    ]},
+    { title: '功高震主', text: '你战功赫赫，朝廷下旨召你回京。部下劝你拥兵自重。', options: [
+      { text: '交出兵权，回京领赏', effects: { fame: 10, power: -20 }, result: '你交出了兵权，朝廷给了你一个空衔。' },
+      { text: '上表请辞，解甲归田', effects: { mind: 15, fame: 10 }, result: '你卸甲的那天，士兵们在营门外跪了一地。' },
+      { text: '拥兵在外，观望时局', effects: { power: 20, mind: -10 }, result: '你拥兵观望，但部下比你先沉不住气。' },
+      { text: '带兵回京，清君侧', effects: { power: 30, fame: -20, mind: -15 }, result: '你起兵了。历史会怎么说，取决于你能不能活下来。' }
+    ]}
+  ],
+  hermit: [
+    { title: '入山', text: '你厌倦世道，入山隐居。\n带了三样东西：一箱书、一包种子、一把旧琴。', options: [
+      { text: '先搭茅屋', effects: { wealth: -5, mind: 10 }, result: '茅屋搭好那天，你第一次在山里睡了个好觉。' },
+      { text: '先开荒种地', effects: { wealth: 10, fame: 5 }, result: '你开出了一小片地，明年春天就可以播种了。' },
+      { text: '先游山玩水，熟悉四周', effects: { mind: 15 }, result: '你发现了一处泉眼，和一棵野桃树。' }
+    ]},
+    { title: '山外来客', text: '有山民来求你，说山下有恶霸占了他们的水井。', options: [
+      { text: '下山帮忙', effects: { fame: 10 }, result: '你下山了。山民们记住了你的脸。' },
+      { text: '教他们去衙门告状', effects: { fame: 5, power: 3 }, result: '你教他们写状纸，他们千恩万谢地去了。' },
+      { text: '闭门不见', effects: { mind: -5 }, result: '你关了门，可你夜里听见了他们的哭声。' }
+    ]},
+    { title: '名声渐起', text: '你的学识和名声在山外传开，开始有读书人前来求教。', options: [
+      { text: '来者不拒，开讲', effects: { fame: 15, mind: -5 }, result: '你讲了很多，也累了很多。' },
+      { text: '择人而教', effects: { fame: 10, mind: 5 }, result: '你收下了三个学生，其中一个后来成了大儒。' },
+      { text: '谢绝，图清静', effects: { mind: 10, fame: -5 }, result: '你的门从此不再开了。' }
+    ]},
+    { title: '朝廷征召', text: '朝廷下诏，征你入朝为官。', options: [
+      { text: '应召出山', effects: { power: 20, mind: -10 }, result: '你走出了山，从此山外的风风雨雨，又与你有关了。' },
+      { text: '上表请辞', effects: { fame: 10, mind: 5 }, result: '你在表文里写了八个字："山野之人，不堪大用。"' },
+      { text: '避而不见', effects: { power: -5, mind: 10 }, result: '官府的人在山里转了三天，没找到你。' }
+    ]},
+    { title: '山中岁月', text: '你种的那棵松树，已亭亭如盖。', options: [
+      { text: '坐在树下抚琴', effects: { mind: 15 }, result: '琴声在山谷里回荡，你忽然觉得，这比什么都好。' },
+      { text: '提笔写诗留念', effects: { fame: 5, mind: 5 }, result: '诗只有四句，但每一句都像这棵松树。' },
+      { text: '叫来弟子，讲当年种树的故事', effects: { fame: 10 }, result: '弟子们听得入神，你讲到最后，自己笑了。' }
+    ]},
+    { title: '出山还是终老', text: '天下大乱，有义军首领亲至山中，请你出山当军师。', options: [
+      { text: '出山，辅佐明主', effects: { power: 25, mind: -10 }, result: '你走出了山，这一次，你带上了那箱书。' },
+      { text: '拒绝，说"乱世归乱世，山归山"', effects: { mind: 15, fame: 10 }, result: '义军首领叹了口气，留下了三车粮食，走了。' },
+      { text: '遣弟子出山，自己留山', effects: { power: 10, fame: 10 }, result: '你的弟子出山了，你一个人留在了山上。' }
+    ]}
+  ],
+  artisan: [
+    { title: '拜师', text: '师父第一天没教你手艺，只让你磨了三天凿子。', options: [
+      { text: '老老实实磨', effects: { mind: 5, fame: 5 }, result: '师父点了点头，没说话。' },
+      { text: '问师父为何不教手艺', effects: { power: 3, mind: -3 }, result: '师父说："凿子都磨不好，还想学什么手艺？"' },
+      { text: '白天磨凿子，夜里偷看师父干活', effects: { power: 5 }, result: '你偷看到了师父的一点绝活。' }
+    ]},
+    { title: '三年出师', text: '师父说你可以出师了，但要替他做三件事中的一件。', options: [
+      { text: '修祠堂', effects: { fame: 10, wealth: 5 }, result: '你修好了祠堂，村里人给你立了一块匾。' },
+      { text: '带师弟一年', effects: { mind: 5, fame: 5 }, result: '师弟很笨，但你对得起师父。' },
+      { text: '帮师父还债', effects: { wealth: -10, fame: 10 }, result: '你拿出了所有积蓄。师父说："好孩子。"' }
+    ]},
+    { title: '第一件作品', text: '富商出高价请你打一件传家之物，但你觉得他的图样很蠢。', options: [
+      { text: '按图样做，拿钱办事', effects: { wealth: 15, fame: -5 }, result: '你拿到了钱，但你在成品上刻了自己的记号。' },
+      { text: '说服他改你的设计', effects: { fame: 10, wealth: 10 }, result: '富商看了你的设计，愣了半晌，说："值。"' },
+      { text: '拒接', effects: { fame: 10, wealth: -5 }, result: '你说："我做的每件东西，都要对得起我的手。"' }
+    ]},
+    { title: '官府征召', text: '朝廷征召天下工匠入京营造，一去三年。', options: [
+      { text: '应召前往', effects: { power: 15, wealth: 10, mind: -10 }, result: '你去了京城，见识了天下最高超的手艺。' },
+      { text: '称病推脱', effects: { fame: -5, mind: 5 }, result: '你推脱了，但官府记住了你的名字。' },
+      { text: '派徒弟代去', effects: { fame: 5, power: -5 }, result: '你的徒弟去了，回来时已经能独当一面。' }
+    ]},
+    { title: '匠道', text: '你渐渐明白，手艺到了一定境界，就不再是手艺。', options: [
+      { text: '追求极致，不做则已', effects: { fame: 10, wealth: -5 }, result: '你做的每件东西，都要做到最好。' },
+      { text: '把心得记下来，传给后人', effects: { fame: 15, mind: 5 }, result: '你写了一本书，后来成了工匠们的秘传。' },
+      { text: '多收弟子，让手艺传下去', effects: { fame: 10, power: 5 }, result: '你收了很多弟子，也操了很多心。' }
+    ]},
+    { title: '传世之作', text: '你终于要做一件真正传世的东西。', options: [
+      { text: '造一座桥，方便万民', effects: { fame: 20, wealth: -10 }, result: '桥造好了。你站在桥头，看着人们从桥上走过。' },
+      { text: '造一件奇器，惊动世人', effects: { fame: 15, power: 10 }, result: '你的奇器震惊天下，也给你带来了麻烦。' },
+      { text: '造一把自己最满意的工具', effects: { mind: 15, fame: 5 }, result: '你没有给任何人看，但你知道，这是你这辈子做得最好的一件。' }
+    ]}
+  ],
+  doctor: [
+    { title: '学医', text: '师父临终前问你：学医是为了什么？', options: [
+      { text: '济世救人', effects: { fame: 10, mind: 5 }, result: '师父说："善。"' },
+      { text: '养家糊口', effects: { wealth: 5, fame: 3 }, result: '师父叹了口气，说："也难为你了。"' },
+      { text: '求长生之术', effects: { power: 5, mind: 5 }, result: '师父看了你很久，说："这条路不好走。"' }
+    ]},
+    { title: '初试身手', text: '邻村有人病重，但诊金微薄，且病症棘手。', options: [
+      { text: '前往诊治', effects: { fame: 15 }, result: '你去了。那人活了。' },
+      { text: '开方子让人带去', effects: { fame: 5, mind: -5 }, result: '方子开对了，但人没熬过去。' },
+      { text: '不去，说自己没把握', effects: { mind: -5 }, result: '你躲了。那家人后来再也没有找过你。' }
+    ]},
+    { title: '贵人相请', text: '城中富商重金请你上门，说他家幼子怪病缠身。', options: [
+      { text: '前往', effects: { wealth: 20, power: 10 }, result: '你治好了那个孩子，富商给了你一辈子用不完的诊金。' },
+      { text: '请送到你医馆', effects: { fame: 5, power: -5 }, result: '富商没有再来。' },
+      { text: '婉拒，说自己只给穷人看病', effects: { fame: 10, wealth: -5 }, result: '你得罪了富商，但穷人们更信你了。' }
+    ]},
+    { title: '瘟疫', text: '邻县爆发瘟疫，官府封锁，百姓逃散。', options: [
+      { text: '前往救治', effects: { fame: 20, mind: -10 }, result: '你在疫区待了四十七天。' },
+      { text: '配药托人送去', effects: { fame: 10, wealth: -5, mind: -5 }, result: '药送到了，但死了很多人。' },
+      { text: '闭门不出', effects: { mind: -10 }, result: '你关了门，但你听得见外面的哭声。' }
+    ]},
+    { title: '丹方', text: '你偶得半张古丹方，可延年益寿，但需砒霜入药。', options: [
+      { text: '按方炼制', effects: { power: 15, wealth: 10, mind: -10 }, result: '丹成了。但你知道，这是一条不归路。' },
+      { text: '封存不用', effects: { mind: 10, fame: 5 }, result: '你把丹方锁在了箱底。' },
+      { text: '改方减毒', effects: { fame: 10, power: 5 }, result: '你改了方子，虽然药效减半，但不再害人。' }
+    ]},
+    { title: '生死之间', text: '你面前有两个病人：一个穷苦农妇，一个权贵之子。你只能先救一个。', options: [
+      { text: '先救农妇', effects: { fame: 15, power: -10 }, result: '农妇活了，权贵之子死了。' },
+      { text: '先救权贵之子', effects: { power: 15, fame: -10 }, result: '权贵之子活了，农妇死了。' },
+      { text: '拼尽全力同时救', effects: { mind: 10, power: -5, fame: 10 }, result: '你两个都救了，但你自己的手，从此再也不稳了。' }
+    ]}
+  ],
+  actor: [
+    { title: '入行', text: '师父说，这行当有三不：\n不跪着唱，不闭眼唱，不昧心唱。', options: [
+      { text: '记在心里', effects: { mind: 10, fame: 5 }, result: '你没说话，但你把这句话刻在了心里。' },
+      { text: '问师父这三不什么意思', effects: { fame: 5, mind: -3 }, result: '师父打了你一巴掌："自己去悟！"' },
+      { text: '只当耳旁风', effects: {}, result: '你笑了笑，没当回事。' }
+    ]},
+    { title: '第一次登台', text: '你第一次登台，下面坐满了人。琴师起调，你忽然忘了词。', options: [
+      { text: '硬着头皮即兴编', effects: { fame: 10 }, result: '你编的词居然押上了韵。' },
+      { text: '停下来，告罪重来', effects: { fame: -5, mind: 3 }, result: '你停下来告罪，台下有人笑，有人鼓掌。' },
+      { text: '把忘词变成戏里的停顿', effects: { fame: 15, mind: 5 }, result: '停顿的那一下，所有人的心都提了起来。' }
+    ]},
+    { title: '堂会', text: '权贵请你去府上唱堂会。\n唱到一半，有人掀桌呵斥："戏子也敢唱这个？"', options: [
+      { text: '继续唱完', effects: { mind: 10, fame: 5 }, result: '你唱完了。那个掀桌的人，最后给你鼓了掌。' },
+      { text: '即兴改词讽刺', effects: { fame: 15, power: -5 }, result: '你改的词像刀子，那权贵脸都青了。' },
+      { text: '停下，问："大人想听什么？"', effects: { power: 5, wealth: 5, mind: -3 }, result: '你换了个曲子，但你心里清楚，有些东西换不掉。' }
+    ]},
+    { title: '戏班变故', text: '班主病重，戏班面临解散。', options: [
+      { text: '接管戏班，撑下去', effects: { power: 10, wealth: -10 }, result: '你接下了戏班，也接下了三十张嘴。' },
+      { text: '散就散了吧', effects: { mind: -5 }, result: '你们在班主床前分了行李，谁也没看谁。' },
+      { text: '先问班主怎么说', effects: { fame: 5, mind: 5 }, result: '班主说："戏不能散。"' }
+    ]},
+    { title: '名动一方', text: '有外地戏班来请你去挂头牌。', options: [
+      { text: '去，人往高处走', effects: { power: 10, wealth: 15 }, result: '你去了大地方，住进了大宅子。' },
+      { text: '不去，留在老戏班', effects: { fame: 10, mind: 5 }, result: '你留了下来，老戏班的人记了你一辈子。' },
+      { text: '去，但带走了老师父教的三不', effects: { fame: 10, power: 5 }, result: '你去了，但你没有变成他们。' }
+    ]},
+    { title: '戏与命', text: '有人把你这些年的经历写成话本，想让你署名。', options: [
+      { text: '署名，天下皆知', effects: { fame: 20, power: -10 }, result: '你的名字传遍了大江南北，也传进了某些人的耳朵里。' },
+      { text: '不署名，说"都是戏，何必当真"', effects: { mind: 15, fame: 5 }, result: '话本卖得很好，但没有人知道写的是你。' },
+      { text: '自己重写一版', effects: { fame: 10, power: 5 }, result: '你重写的那版，后来成了最好的版本。' }
+    ]}
+  ],
+  farmer: [
+    { title: '分家', text: '你十六岁那年，家里给你三亩薄田和一把旧锄头，说："自己活去。"', options: [
+      { text: '扛着锄头下地', effects: { wealth: 5, mind: 5 }, result: '你挖开了第一垄土。' },
+      { text: '把田租出去，去镇上做工', effects: { wealth: 10, fame: -5 }, result: '你去了镇上，田里长满了别人的庄稼。' },
+      { text: '用仅有的钱买种粮，搏一年', effects: { wealth: 15 }, result: '你用全部身家，赌了一个秋天。', risk: true, riskEffects: { wealth: -5 }, riskText: '一场冰雹，种粮全打了水漂。' }
+    ]},
+    { title: '保长摊派', text: '保长要每家多交三斗粮，说是"县衙新规"。', options: [
+      { text: '咬牙交粮', effects: { wealth: -10, mind: -5 }, result: '你交粮时，保长数都没数。' },
+      { text: '联合邻居去县衙问', effects: { fame: 10 }, result: '你们在县衙门口站了一天，保长后来再没提这件事。' },
+      { text: '把粮藏起来，说收成不好', effects: { wealth: 5, mind: -3 }, result: '你藏了粮，但保长看你的眼神不一样了。' }
+    ]},
+    { title: '天灾', text: '大旱，庄稼眼看要枯死。', options: [
+      { text: '挑水浇地', effects: { wealth: 5, mind: -5 }, result: '你救回了一半庄稼。' },
+      { text: '求雨，带着全村跪了三天', effects: { fame: 10, mind: 5 }, result: '雨没有来，但村里人的心齐了。' },
+      { text: '去县城托人买水', effects: { wealth: -10, mind: -5 }, result: '你花光了钱，但水也没买到。' }
+    ]},
+    { title: '流民过境', text: '一群流民路过，面有菜色，跪求施舍。', options: [
+      { text: '拿出家中存粮', effects: { wealth: -10, fame: 15, mind: 10 }, result: '你把自己过冬的粮给了他们。' },
+      { text: '只给一碗水，劝他们去别处', effects: { mind: -5 }, result: '你给了水，但你的心也凉了半截。' },
+      { text: '招他们帮你收庄稼，以工换粮', effects: { fame: 10, wealth: 5 }, result: '流民们帮你收完了庄稼，你留他们吃了一顿饱饭。' }
+    ]},
+    { title: '收成', text: '今年收成不错，你第一次有了余粮。', options: [
+      { text: '囤起来，来年再卖', effects: { wealth: 20 }, result: '你把粮囤进了缸里。', risk: true, riskEffects: { wealth: -10 }, riskText: '粮价跌了，囤的粮贱卖都不及。' },
+      { text: '平价卖给乡亲', effects: { fame: 15, wealth: 5 }, result: '乡亲们说："还是你厚道。"' },
+      { text: '拉到镇上卖个好价', effects: { wealth: 15, fame: -5 }, result: '你在镇上卖了个好价。' }
+    ]},
+    { title: '乱世', text: '天下大乱，有义军来到你的村子，说"均田免赋"，请你入伙。', options: [
+      { text: '入伙，反了', effects: { power: 20, fame: -10 }, result: '你放下了锄头，拿起了一把刀。' },
+      { text: '躲进山里', effects: { mind: -15 }, result: '你躲进了山里，下山时，村子已经没了。' },
+      { text: '劝乡亲们不要轻信', effects: { fame: 10, power: 5 }, result: '你的话让一些人留了下来，也让一些人更加狂热。' }
+    ]}
+  ]
+};
+
+// ========== 通用小事件 (20) ==========
+const MINOR_EVENTS = [
+  { title: '找错钱', text: '店小二找钱多给了三枚铜板。', options: [
+    { text: '退回去', effects: { fame: 3 }, result: '小二愣住了，说："您是个实诚人。"' },
+    { text: '收下', effects: { wealth: 2 }, result: '这三枚铜板在兜里叮当响了一路。' },
+    { text: '再点一碗面', effects: { mind: 3, wealth: -2 }, result: '面端上来了，你吃得很香。' }
+  ]},
+  { title: '算命先生', text: '街边算命老头拉住你："你这个人，命里带煞。"', options: [
+    { text: '让他细说', effects: { wealth: -5 }, result: '他收了你的钱，说了半天，没一句准的。' },
+    { text: '一笑走过', effects: { mind: 3 }, result: '你走远了，还听见他在后面喊。' },
+    { text: '说："我命由我不由天。"', effects: { fame: 5 }, result: '老头愣了一下，给你作了个揖。' }
+  ]},
+  { title: '猴子骂街', text: '一只猴子在衙门口学人说话，骂了县令。', options: [
+    { text: '看热闹', effects: { mind: 5 }, result: '猴子骂得抑扬顿挫，你笑得肚子疼。' },
+    { text: '驱赶', effects: { fame: 2 }, result: '猴子跑了，县令的脸还是黑的。' },
+    { text: '买下它', effects: { wealth: -3, mind: 8 }, result: '你把它带回家，它学会了你的口头禅。' }
+  ]},
+  { title: '远方亲戚', text: '一个八竿子打不着的亲戚来投奔你。', options: [
+    { text: '收留', effects: { fame: 5, wealth: -3 }, result: '他住下了，也带来了麻烦。' },
+    { text: '给钱打发', effects: { wealth: -5 }, result: '他拿了钱，再没出现过。' },
+    { text: '介绍他去码头扛活', effects: { fame: 3, power: 2 }, result: '他在码头站稳了脚跟，逢人便说你的好。' }
+  ]},
+  { title: '蝴蝶梦', text: '你梦见自己变成蝴蝶，醒来后分不清梦与现实。', options: [
+    { text: '说与旁人听', effects: { fame: 2 }, result: '听的人笑了，说你是"庄周再世"。' },
+    { text: '写下梦境', effects: { mind: 5 }, result: '你写得认真，像在写一份证词。' },
+    { text: '继续睡，想再梦一次', effects: { mind: 3 }, result: '你没有再梦见蝴蝶，只梦见了一片花田。' }
+  ]},
+  { title: '厨子炫技', text: '饭馆厨子端上一道"青龙过海"，只是一碗清汤漂根葱。', options: [
+    { text: '夸他', effects: { mind: 5, fame: 2 }, result: '厨子一高兴，给你加了个蛋。' },
+    { text: '要求退钱', effects: { fame: -3 }, result: '厨子说你"不懂吃"，把你赶了出去。' },
+    { text: '拜师学做', effects: { wealth: -2, mind: 5 }, result: '你学了一下午，发现自己真的没这个天赋。' }
+  ]},
+  { title: '乞丐赠物', text: '一个老乞丐塞给你一枚锈铜钱，说"能避邪"。', options: [
+    { text: '收下，系在腰间', effects: { mind: 5 }, result: '铜钱在腰间轻轻响，像在提醒你什么。' },
+    { text: '还给他，说"你比我需要"', effects: { fame: 5 }, result: '老乞丐咧嘴笑了，露出仅剩的两颗牙。' },
+    { text: '拿去买酒', effects: { mind: 3 }, result: '酒很烈，你喝得有点晕。' }
+  ]},
+  { title: '雨夜借宿', text: '大雨倾盆，有人敲你的门求宿一晚。', options: [
+    { text: '开门', effects: { fame: 5 }, result: '他浑身湿透，但眼神很干净。' },
+    { text: '拒绝', effects: { mind: -3 }, result: '你关上门，雨声听起来更大了。' },
+    { text: '让他睡柴房', effects: { fame: 2, power: 2 }, result: '他道了谢，第二天一早就走了。' }
+  ]},
+  { title: '狗中霸王', text: '一条野狗叼走了你的干粮，还回头看你一眼。', options: [
+    { text: '追', effects: { mind: 3 }, result: '你追了半条街，狗叼着干粮跳过了墙。' },
+    { text: '笑骂："好一条畜生"', effects: { mind: 5 }, result: '狗没理你，继续大摇大摆地走了。' },
+    { text: '把剩下的也给它', effects: { fame: 3, mind: 5 }, result: '狗吃完了干粮，跟了你三天。' }
+  ]},
+  { title: '对骂大赛', text: '两个妇人在街头对骂，围观者喝彩。', options: [
+    { text: '看一会儿', effects: { mind: 3 }, result: '你听了一会儿，觉得她们骂得很有节奏。' },
+    { text: '去劝架', effects: { fame: 3 }, result: '你被两个妇人一起骂了。' },
+    { text: '绕道走', effects: {}, result: '你绕开了，但骂声还是传了过来。' }
+  ]},
+  { title: '盲人鼓师', text: '桥头盲眼老人打鼓，鼓声震得心慌。', options: [
+    { text: '给钱', effects: { fame: 3, mind: 5 }, result: '他朝你点了点头，鼓声没停。' },
+    { text: '不听完不走', effects: { mind: 5 }, result: '你听完才走，那鼓声在你心里响了一路。' },
+    { text: '问他鼓从何来', effects: { mind: 3 }, result: '他说："这鼓是一百年前的东西了。"' }
+  ]},
+  { title: '风筝断线', text: '一个孩子的风筝落在你脚边，线断了。', options: [
+    { text: '帮他修好', effects: { fame: 3, mind: 5 }, result: '风筝重新飞了起来，孩子笑了。' },
+    { text: '买只新的给他', effects: { wealth: -2, fame: 5 }, result: '孩子说："你比我爹还大方。"' },
+    { text: '说："飞走了才是它的命。"', effects: { mind: 3 }, result: '孩子似懂非懂，看着远处的天。' }
+  ]},
+  { title: '酒馆赌局', text: '有人拉你赌钱，说"十赌九输，不试怎知"。', options: [
+    { text: '小赌一把', effects: { wealth: 5 }, result: '你赢了点小钱，但你知道不能再赌了。', risk: true, riskEffects: { wealth: -5 }, riskText: '你输了个精光。' },
+    { text: '拒绝', effects: { mind: 3 }, result: '你把手按在钱袋上，没有松开。' },
+    { text: '说："我赌你今天会输。"', effects: { fame: 5 }, result: '那人愣了一下，笑着说："你这个人有意思。"' }
+  ]},
+  { title: '说书人缺场', text: '茶馆说书先生突然病倒，老板急得团团转。', options: [
+    { text: '上台替他讲一段', effects: { fame: 5, mind: 5 }, result: '你讲得不错，台下有人叫好。' },
+    { text: '帮他请大夫', effects: { wealth: -3, fame: 5 }, result: '大夫来了，说书先生对你拱了拱手。' },
+    { text: '起哄退票', effects: { fame: -5 }, result: '老板把你轰了出去。' }
+  ]},
+  { title: '深夜歌声', text: '你夜宿客栈，听见隔壁有人低声唱歌，调子哀婉。', options: [
+    { text: '敲门询问', effects: { mind: 3 }, result: '门开了，是一个思念故人的旅人。' },
+    { text: '塞张纸条过去', effects: { fame: 3 }, result: '第二天，你在桌上看到一句谢。' },
+    { text: '用被子蒙头', effects: { mind: -3 }, result: '可那歌声，你一夜都没忘。' }
+  ]},
+  // 16-20 补写
+  { title: '故人遗物', text: '你在旧物摊上看见一枚熟悉的玉佩，似是故人之物。', options: [
+    { text: '买下', effects: { wealth: -5, mind: 8 }, result: '你摩挲着玉佩，想起了许多旧事。' },
+    { text: '问问摊主来历', effects: { mind: 3 }, result: '摊主说不清，只说是从一座旧坟边收来的。' },
+    { text: '放下离去', effects: { mind: -3 }, result: '你走了几步，又回头看了它一眼。' }
+  ]},
+  { title: '醉汉拦路', text: '一个醉汉拦住你，硬说你欠他十两银子。', options: [
+    { text: '绕开走', effects: { mind: -2 }, result: '他在身后骂了半天，你头也没回。' },
+    { text: '请他喝碗醒酒汤', effects: { wealth: -2, fame: 5 }, result: '他清醒后，红着脸给你作了个揖。' },
+    { text: '与他理论', effects: { fame: -3 }, result: '围观的人越来越多，你最后只好赔笑。' }
+  ]},
+  { title: '神秘棋局', text: '路边有人摆下一局残棋，说"破局者赏银十两"。', options: [
+    { text: '下场一试', effects: { mind: 8, wealth: 10 }, result: '你落子三步，摆棋人脸色大变。', risk: true, riskEffects: { wealth: -3 }, riskText: '你输了，按规矩留下三两茶钱。' },
+    { text: '看两眼，看破不说破', effects: { mind: 5 }, result: '你笑了笑，转身走了。' },
+    { text: '围观', effects: { mind: 2 }, result: '你看了半天，也没看出门道。' }
+  ]},
+  { title: '走失孩童', text: '一个走失的孩童在路边哭，问你认不认得他家。', options: [
+    { text: '带他去找家人', effects: { fame: 8, mind: 5 }, result: '他母亲抱着他，哭得比孩子还凶。' },
+    { text: '给他买个饼，让他等', effects: { wealth: -2, mind: 3 }, result: '你走时，他还在原地啃饼。' },
+    { text: '报官', effects: { fame: 3 }, result: '衙役把他领走了，说会发告示。' }
+  ]},
+  { title: '旧物重生', text: '你翻出一把生锈的旧刀（或旧物），弃之可惜。', options: [
+    { text: '找人打磨翻新', effects: { wealth: -5, mind: 8 }, result: '旧物焕然一新，你看着它出了神。' },
+    { text: '随手送人', effects: { fame: 5 }, result: '收下的人如获至宝。' },
+    { text: '当废铁卖了', effects: { wealth: 3 }, result: '铁匠接过它时，眼神却有些古怪。' }
+  ]}
+];
+
+// ========== 隐藏随机事件 (每角色5) ==========
+const HIDDEN_EVENTS = {
+  emperor: [
+    { title: '夜半笛声', text: '宫中夜半传来笛声，循声而去，是一小太监在吹。', options: [
+      { text: '驻足听完', effects: { mind: 8 }, result: '笛声如诉，你想起了未登基前的日子。' },
+      { text: '赏他', effects: { wealth: -3, fame: 5 }, result: '小太监叩头如捣蒜。' },
+      { text: '斥其扰驾', effects: { power: 5, mind: -5 }, result: '从此宫中再无人敢在夜里奏乐。' }
+    ]},
+    { title: '老臣泣谏', text: '一位三朝老臣跪在殿外，泣谏你勿近佞臣。', options: [
+      { text: '扶起他，虚心纳谏', effects: { fame: 8, mind: 5 }, result: '老臣老泪纵横，说你像极了先帝。' },
+      { text: '命人扶走', effects: { power: 3, fame: -5 }, result: '老臣被架走时，还在回头喊。' },
+      { text: '置之不理', effects: { mind: -5, power: 5 }, result: '你转身回了内殿，心却静不下来。' }
+    ]},
+    { title: '密信', text: '枕下出现一封无名密信，写着"陛下身边有细作"。', options: [
+      { text: '暗中查', effects: { power: 8, mind: -5 }, result: '查来查去，发现是虚惊一场。' },
+      { text: '烧掉', effects: { mind: 3 }, result: '火光映着你的脸，你什么都没说。' },
+      { text: '交给信任之人', effects: { power: 5, fame: 3 }, result: '那人领命而去，从此再没回话。' }
+    ]},
+    { title: '御膳有毒', text: '试菜的太监尝后倒地，御膳里下了毒。', options: [
+      { text: '彻查御膳房', effects: { power: 10, mind: -8 }, result: '牵出一串旧账，你看得心惊。' },
+      { text: '秘而不宣', effects: { mind: -10 }, result: '你从此每餐都先让猫试。' },
+      { text: '赐死涉事厨子', effects: { power: 12, fame: -8 }, result: '厨子死前只说了一句："冤。"' }
+    ]},
+    { title: '星象异变', text: '钦天监急报：紫微星暗淡，主君王有厄。', options: [
+      { text: '下罪己诏', effects: { fame: 10, mind: -5 }, result: '诏书颁下，百姓称你圣明。' },
+      { text: '斥钦天监妖言', effects: { power: 5, mind: -3 }, result: '钦天监吓得不敢再言。' },
+      { text: '静观其变', effects: { mind: 5 }, result: '几日后星象恢复，你松了口气。' }
+    ]}
+  ],
+  xia: [
+    { title: '路遇老丐', text: '一老丐拦住你，说"少年，借一步说话"。', options: [
+      { text: '驻足', effects: { mind: 8 }, result: '他传授你一招，转身即隐入人海。' },
+      { text: '给钱打发', effects: { wealth: -3, mind: 3 }, result: '他接过钱，叹了口气走了。' },
+      { text: '不理', effects: { mind: -3 }, result: '你走出几步，回头他已不见。' }
+    ]},
+    { title: '旧友重逢', text: '酒馆里，多年未见的旧友拍着你的肩。', options: [
+      { text: '痛饮一场', effects: { mind: 8, wealth: -3 }, result: '你们聊到天明，像回到了少年时。' },
+      { text: '客气几句', effects: { fame: 3 }, result: '他眼神一黯，说"你变了"。' },
+      { text: '借口离开', effects: { mind: -5 }, result: '他望着你的背影，喝了闷酒。' }
+    ]},
+    { title: '比武邀约', text: '有人当街下战书，要与你比剑。', options: [
+      { text: '应战', effects: { fame: 12, mind: -3 }, result: '你赢了，但对手的剑法很眼熟。' },
+      { text: '婉拒', effects: { mind: 5, fame: -3 }, result: '他冷笑一声，说"不过如此"。' },
+      { text: '问他缘由', effects: { power: 5 }, result: '原来是为报当年一剑之仇。' }
+    ]},
+    { title: '义庄夜宿', text: '雨夜你借宿义庄，棺中似有声响。', options: [
+      { text: '开棺查看', effects: { power: 5, mind: -8 }, result: '是个假死被救活的人。' },
+      { text: '装作不知', effects: { mind: -10 }, result: '你一夜没睡，剑握得发烫。' },
+      { text: '念段经文', effects: { mind: 5 }, result: '声响停了，你也安心睡去。' }
+    ]},
+    { title: '无名剑谱', text: '你在山洞捡到一本无名剑谱，纸页泛黄。', options: [
+      { text: '研习', effects: { power: 12, mind: -5 }, result: '你练成三式，却也走火入魔一夜。' },
+      { text: '烧掉', effects: { mind: 8, fame: 3 }, result: '火光中，你仿佛听见一声叹息。' },
+      { text: '藏起不用', effects: { mind: 3 }, result: '你把它埋回了原处。' }
+    ]}
+  ],
+  merchant: [
+    { title: '故交借银', text: '落魄的故交上门，借银百两周转。', options: [
+      { text: '借', effects: { wealth: -10, fame: 8 }, result: '他千恩万谢，写下欠条。' },
+      { text: '拒', effects: { mind: -5 }, result: '他走时，没回头。' },
+      { text: '送他二十两，不还也罢', effects: { wealth: -5, fame: 10, mind: 5 }, result: '他红了眼眶，说"你是我恩人"。' }
+    ]},
+    { title: '奇货', text: '有胡商兜售一袋"金砂"，要价极低。', options: [
+      { text: '买下', effects: { wealth: 15 }, result: '回去一验，果然是真金。', risk: true, riskEffects: { wealth: -8 }, riskText: '回去一验，是黄铜粉末。' },
+      { text: '压价', effects: { wealth: 5, fame: -3 }, result: '胡商咬牙成交，眼神不善。' },
+      { text: '不要', effects: { mind: 3 }, result: '胡商转头卖给了别人。' }
+    ]},
+    { title: '账房先生', text: '你的账房先生突然要辞行，说家中老母病重。', options: [
+      { text: '厚赠送行', effects: { wealth: -5, fame: 8 }, result: '他跪谢，说日后必报。' },
+      { text: '挽留', effects: { mind: -3 }, result: '他执意要走，你也不好强留。' },
+      { text: '查账', effects: { power: 5, mind: -3 }, result: '账目无亏，你多心了。' }
+    ]},
+    { title: '同行相倾', text: '同行在背后散布你货里有假的消息。', options: [
+      { text: '当众对质', effects: { fame: 10, power: 3 }, result: '他哑口无言，名声扫地。' },
+      { text: '降价抢他生意', effects: { wealth: -8, fame: -3 }, result: '他撑不住，关了店。' },
+      { text: '一笑置之', effects: { mind: 5 }, result: '清者自清，老主顾没受影响。' }
+    ]},
+    { title: '遗物托付', text: '一垂死旅人将一包裹托付给你，说"交与京城某处"。', options: [
+      { text: '送抵', effects: { fame: 12, mind: 5 }, result: '收件人重谢，还引荐了贵人。' },
+      { text: '打开看看', effects: { mind: -5, wealth: 8 }, result: '里面是金银，你犹豫后还是留下了。' },
+      { text: '报官', effects: { fame: 5 }, result: '官府收了，赏你几两辛苦钱。' }
+    ]}
+  ],
+  official: [
+    { title: '同年来访', text: '同年登门的旧友，言谈间似有试探。', options: [
+      { text: '虚与委蛇', effects: { mind: -3, power: 3 }, result: '他走后，你琢磨了半天他话里之意。' },
+      { text: '直言相问', effects: { fame: 5, mind: 3 }, result: '他尴尬一笑，承认是受人托来探口风。' },
+      { text: '托病不见', effects: { mind: -5 }, result: '门子传话出去，他悻悻而去。' }
+    ]},
+    { title: '狱中冤声', text: '你路过牢狱，听见有人喊冤，自称是十年前的旧案。', options: [
+      { text: '调卷重审', effects: { fame: 12, mind: 5 }, result: '果然冤枉，你平反了一桩旧案。' },
+      { text: '问两句', effects: { fame: 3 }, result: '狱卒支吾，你也作罢。' },
+      { text: '快步离开', effects: { mind: -8 }, result: '那声音跟了你一路。' }
+    ]},
+    { title: '上官赐宴', text: '上官私宴，席间送你一美婢。', options: [
+      { text: '收下', effects: { wealth: 5, mind: -5 }, result: '你收下了，也收下了一份人情债。' },
+      { text: '婉拒', effects: { fame: 5, mind: 3 }, result: '上官笑了笑，眼神却冷了。' },
+      { text: '收下后放良', effects: { wealth: -3, fame: 8, mind: 5 }, result: '那婢女叩头泣谢。' }
+    ]},
+    { title: '故纸堆', text: '你在旧档房翻到一封先帝遗诏的抄本，内容惊人。', options: [
+      { text: '密藏', effects: { power: 8, mind: -8 }, result: '你藏起它，从此夜不能寐。' },
+      { text: '烧毁', effects: { mind: 5, fame: -3 }, result: '火光中，你仿佛卸下千斤重担。' },
+      { text: '呈报', effects: { fame: 10, power: -5 }, result: '朝廷震动，你被卷入旋涡。' }
+    ]},
+    { title: '寒门学子', text: '一寒门学子求见，呈上一策论，见解独到。', options: [
+      { text: '收为门生', effects: { power: 5, fame: 5 }, result: '他后来果然高中。' },
+      { text: '资助他读书', effects: { wealth: -5, fame: 8 }, result: '他泣谢，说恩同再造。' },
+      { text: '夸两句打发', effects: { mind: -3 }, result: '他失望而去，你也没在意。' }
+    ]}
+  ],
+  general: [
+    { title: '老兵诀别', text: '一老兵临终，把佩刀赠你，说"替我看着这天下"。', options: [
+      { text: '郑重收下', effects: { mind: 8, fame: 5 }, result: '你把刀挂在帐中，夜夜相对。' },
+      { text: '还给他陪葬', effects: { fame: 8, mind: 3 }, result: '老兵含笑而逝。' },
+      { text: '命人收起', effects: { mind: -3 }, result: '你不敢多看那把刀。' }
+    ]},
+    { title: '敌将单挑', text: '阵前敌将指名要与你单挑。', options: [
+      { text: '应战', effects: { fame: 15, mind: -5 }, result: '你险胜，斩其于马下。', risk: true, riskEffects: { mind: -15, fame: -5 }, riskText: '你重伤退下，士气大挫。' },
+      { text: '派部将代战', effects: { power: 3 }, result: '部将获胜，抢了风头。' },
+      { text: '以箭雨应之', effects: { power: 5, fame: -8 }, result: '敌将乱箭而死，江湖耻你"无勇"。' }
+    ]},
+    { title: '军中瘟疫', text: '营中突发瘟疫，已倒下数十人。', options: [
+      { text: '亲入疫营安抚', effects: { fame: 15, mind: -8 }, result: '士兵们见你亲至，士气大振。' },
+      { text: '隔离封锁', effects: { power: 5, mind: -3 }, result: '疫情控制住，但被隔离者多有怨言。' },
+      { text: '请医求药', effects: { wealth: -8, fame: 5 }, result: '药到病除，你松了口气。' }
+    ]},
+    { title: '故人子来投', text: '昔日阵亡同袍之子来投军，唤你"叔父"。', options: [
+      { text: '收在身边', effects: { fame: 8, mind: 5 }, result: '他勤勉，像极了他父亲。' },
+      { text: '安排闲职', effects: { mind: -3 }, result: '他眼神黯淡，你不敢看他。' },
+      { text: '荐去别营', effects: { fame: 3 }, result: '他拜别而去，说"不靠叔父也成"。' }
+    ]},
+    { title: '夜观天象', text: '参军夜观天象，说"将军，此兆大凶"。', options: [
+      { text: '按兵不动', effects: { mind: 5, power: -3 }, result: '几日后敌军果有埋伏，你躲过一劫。' },
+      { text: '怒斥妖言', effects: { power: 5, mind: -5 }, result: '你照常出兵，险些中伏。' },
+      { text: '改期出兵', effects: { fame: 3, mind: 3 }, result: '避开凶日，旗开得胜。' }
+    ]}
+  ],
+  hermit: [
+    { title: '虎卧门前', text: '清晨开门，一只斑斓大虎卧在门前，似有伤。', options: [
+      { text: '为它疗伤', effects: { mind: 10, fame: 5 }, result: '虎愈后长啸而去，此后常衔野味放在你门前。' },
+      { text: '远远避开', effects: { mind: -3 }, result: '虎自行离去，你却心悸半日。' },
+      { text: '关门不出', effects: { mind: -5 }, result: '虎守了三日才走，你三日没出门。' }
+    ]},
+    { title: '访仙', text: '一游方道士说你根骨清奇，邀你同去访仙。', options: [
+      { text: '随他去', effects: { mind: 8, fame: -5 }, result: '走了半月，他原是个骗子，你倒看了风景。' },
+      { text: '婉拒', effects: { mind: 5 }, result: '他叹气说"缘未到"，飘然而去。' },
+      { text: '留他吃茶', effects: { wealth: -2, mind: 3 }, result: '他胡吹一通，茶喝完就走。' }
+    ]},
+    { title: '山中盗匪', text: '一伙盗匪占了你的山路，向过客勒索。', options: [
+      { text: '下山劝他们改邪', effects: { fame: 10, mind: 3 }, result: '匪首竟被你说动，散伙归田。' },
+      { text: '报官', effects: { power: 3, mind: -3 }, result: '官兵围山，剿了个干净，你也清净了。' },
+      { text: '另辟小径', effects: { mind: 5 }, result: '你绕道而行，不与之为伍。' }
+    ]},
+    { title: '樵夫赠药', text: '一樵夫见你咳嗽，送你一包草药，说"山里人验过的"。', options: [
+      { text: '煎服', effects: { mind: 8 }, result: '你咳疾竟愈，神清气爽。' },
+      { text: '收下不喝', effects: { mind: 3 }, result: '你谢了他，药却搁在了一边。' },
+      { text: '回赠他粮食', effects: { wealth: -3, fame: 5 }, result: '他千恩万谢，逢人便夸你仁义。' }
+    ]},
+    { title: '琴弦断', text: '你抚琴时，琴弦忽然崩断。', options: [
+      { text: '换弦再抚', effects: { mind: 5 }, result: '新弦音色更清，你弹到月上中天。' },
+      { text: '静坐不弹', effects: { mind: 8 }, result: '无声胜有声，你坐了一整夜。' },
+      { text: '收琴入匣', effects: { mind: -3 }, result: '你心绪不宁，数日未碰琴。' }
+    ]}
+  ],
+  artisan: [
+    { title: '师妹偷艺', text: '师妹偷学你的绝活，被你撞见。', options: [
+      { text: '教她', effects: { fame: 5, mind: 5 }, result: '她红着脸谢你，此后对你更亲。' },
+      { text: '装没看见', effects: { mind: 3 }, result: '她偷偷学去三成，你也没拦。' },
+      { text: '告师父', effects: { power: 3, mind: -5 }, result: '师父训了她，师妹却记恨上你。' }
+    ]},
+    { title: '残谱', text: '你在旧书摊翻到半卷残谱，记着一种失传技艺。', options: [
+      { text: '钻研复原', effects: { fame: 12, mind: -5 }, result: '你复原了七成，已惊艳同行。' },
+      { text: '高价买下', effects: { wealth: -8, fame: 8 }, result: '你藏起来，秘不示人。' },
+      { text: '只记一页', effects: { mind: 3 }, result: '你抄下一两个要点，余者弃之。' }
+    ]},
+    { title: '官府强征', text: '官府强征你的作品进贡，只给微薄工钱。', options: [
+      { text: '忍了', effects: { wealth: -3, mind: -8 }, result: '你的心血被当作贡品，连名字都没留。' },
+      { text: '据理力争', effects: { fame: 8, power: -3 }, result: '官府让步，给了你应得的酬劳。' },
+      { text: '交次品', effects: { mind: -3, wealth: 3 }, result: '你交了件应付的，心里不是滋味。' }
+    ]},
+    { title: '同行论道', text: '一位同行前辈来访，与你论了一日技艺。', options: [
+      { text: '倾囊交流', effects: { mind: 8, fame: 5 }, result: '你二人相见恨晚，各有所得。' },
+      { text: '留一手', effects: { mind: -3 }, result: '前辈似有察觉，兴致缺缺而去。' },
+      { text: '请教他', effects: { fame: 3, mind: 5 }, result: '前辈指点了你三两句，你受用终身。' }
+    ]},
+    { title: '废材重生', text: '你捡到一块被人丢弃的废木，纹理却极奇特。', options: [
+      { text: '精雕成器', effects: { fame: 10, mind: 5 }, result: '废木成了一件奇品，传为佳话。' },
+      { text: '收作备料', effects: { mind: 3 }, result: '你把它放料房，日后再说。' },
+      { text: '当柴烧了', effects: { mind: -3 }, result: '火光中你才发现纹理，悔之晚矣。' }
+    ]}
+  ],
+  doctor: [
+    { title: '药童之过', text: '药童抓错了一味药，险些酿成大祸。', options: [
+      { text: '严惩', effects: { power: 5, mind: -5 }, result: '药童被逐，你心也硬了一回。' },
+      { text: '耐心教导', effects: { mind: 5, fame: 3 }, result: '药童从此再不错漏。' },
+      { text: '自己担责', effects: { fame: 8, mind: -3 }, result: '你登门赔罪，名声反更好了。' }
+    ]},
+    { title: '疑难杂症', text: '一病人症状古怪，你从未见过。', options: [
+      { text: '翻遍医书', effects: { mind: 8, fame: 5 }, result: '你找到治法，病人痊愈。' },
+      { text: '请同行会诊', effects: { fame: 5, power: 3 }, result: '众人合力，救回一命。' },
+      { text: '坦言无把握', effects: { mind: -5, fame: 3 }, result: '病人另寻名医，你却记住了这症。' }
+    ]},
+    { title: '同行相轻', text: '同行在背后说你"沽名钓誉"。', options: [
+      { text: '不理', effects: { mind: 5 }, result: '清者自清，病人心中有数。' },
+      { text: '当面质问', effects: { fame: 3, mind: -3 }, result: '他尴尬道歉，却怀恨在心。' },
+      { text: '以德报怨', effects: { fame: 10, mind: 5 }, result: '他后来遇难题，你出手相助，他羞愧难当。' }
+    ]},
+    { title: '老妇赠方', text: '一老妇赠你一张祖传秘方，说"传于有德者"。', options: [
+      { text: '收下研究', effects: { mind: 8, fame: 5 }, result: '方子果有奇效，你造福多人。' },
+      { text: '谢绝', effects: { mind: 3 }, result: '她说"也罢"，转赠他人。' },
+      { text: '回赠银钱', effects: { wealth: -5, mind: 5 }, result: '她含泪收下，说终于有人看得起这方子。' }
+    ]},
+    { title: '医不自治', text: '你自己病了，却开不出让自己安心的方子。', options: [
+      { text: '硬扛', effects: { mind: -8 }, result: '你躺了七日，才慢慢好转。' },
+      { text: '请同行', effects: { mind: 5, fame: 3 }, result: '同行开方，你安心服下。' },
+      { text: '减少用药', effects: { mind: 3 }, result: '你只用了温和之药，慢慢调养。' }
+    ]}
+  ],
+  actor: [
+    { title: '戏痴求教', text: '一戏痴跪在你门外三日，只为求一句唱法。', options: [
+      { text: '收他为徒', effects: { fame: 8, mind: 5 }, result: '他天赋平平，却肯下死功夫。' },
+      { text: '点拨两句', effects: { fame: 5, mind: 3 }, result: '他如获至宝，叩头而去。' },
+      { text: '不见', effects: { mind: -5 }, result: '他第四日走了，你心里有些过意不去。' }
+    ]},
+    { title: '旧戏服', text: '你在箱底翻出师父留下的旧戏服。', options: [
+      { text: '穿上登台', effects: { fame: 10, mind: 5 }, result: '观众说，你越来越像师父了。' },
+      { text: '供起来', effects: { mind: 8 }, result: '你把它洗净供在后台，每逢开戏先拜。' },
+      { text: '收起', effects: { mind: -3 }, result: '你没敢穿，怕压不住。' }
+    ]},
+    { title: '贵人点戏', text: '一神秘贵人点了一出失传的老戏，出价极高。', options: [
+      { text: '连夜复原', effects: { wealth: 10, fame: 12, mind: -5 }, result: '你凭记忆拼出七成，贵人却赞不绝口。' },
+      { text: '坦言记不全', effects: { fame: 3, mind: 3 }, result: '贵人笑了笑，赏了你一锭银子。' },
+      { text: '推辞', effects: { mind: -3 }, result: '贵人不悦而去。' }
+    ]},
+    { title: '街头卖唱', text: '你路见一盲叟街头卖唱，嗓音苍凉。', options: [
+      { text: '同唱一段', effects: { fame: 8, mind: 5 }, result: '围观者叫好，盲叟笑中带泪。' },
+      { text: '给钱', effects: { wealth: -2, mind: 3 }, result: '他朝你方向点了点头。' },
+      { text: '教他一招', effects: { fame: 5, mind: 8 }, result: '他学得快，此后生意好了许多。' }
+    ]},
+    { title: '戏中之兆', text: '你演到一出悲戏，道具刀忽然真断了。', options: [
+      { text: '即兴改词', effects: { fame: 10, mind: 5 }, result: '你把断刀化进戏里，满堂彩。' },
+      { text: '停演告罪', effects: { fame: -3 }, result: '观众散去，你心神不宁。' },
+      { text: '换道具续演', effects: { mind: -3 }, result: '你草草演完，心里发毛。' }
+    ]}
+  ],
+  farmer: [
+    { title: '老牛', text: '你家的老牛病了，犁不动地。', options: [
+      { text: '请兽医', effects: { wealth: -3, mind: 5 }, result: '老牛好了，又陪了你两年。' },
+      { text: '卖了换小的', effects: { wealth: 5, mind: -5 }, result: '你牵着老牛去集市，回头没舍得。' },
+      { text: '自己照料', effects: { mind: 8 }, result: '老牛竟慢慢好转，你松了口气。' }
+    ]},
+    { title: '邻人争水', text: '邻人为争水渠与你起了口角。', options: [
+      { text: '让给他', effects: { fame: 8, mind: 3 }, result: '邻人羞愧，秋收送你一筐果。' },
+      { text: '讲理', effects: { fame: 3, mind: -3 }, result: '你争赢了，邻人却记了仇。' },
+      { text: '请保长评理', effects: { power: 2, mind: -2 }, result: '保长各打五十大板，谁也没赢。' }
+    ]},
+    { title: '荒年借粮', text: '荒年里，你还有点余粮，亲戚来借。', options: [
+      { text: '借', effects: { wealth: -5, fame: 8 }, result: '他千恩万谢，写了欠条。' },
+      { text: '只借一点', effects: { wealth: -2, mind: 3 }, result: '他嫌少，脸拉得老长。' },
+      { text: '不借', effects: { mind: -8, fame: -5 }, result: '他骂骂咧咧走了，说你"六亲不认"。' }
+    ]},
+    { title: '田中异物', text: '你翻地时翻出一坛旧银，埋了不知多少年。', options: [
+      { text: '据为己有', effects: { wealth: 15, mind: -5 }, result: '你夜里总做噩梦，梦见有人来讨。' },
+      { text: '报官', effects: { fame: 5, wealth: 5 }, result: '官府赏了你一成。' },
+      { text: '原地埋回', effects: { mind: 8 }, result: '你把它原样埋好，权当没看见。' }
+    ]},
+    { title: '童子读书', text: '邻家孩童聪慧，却因家贫上不起学。', options: [
+      { text: '资助他读书', effects: { wealth: -5, fame: 10, mind: 5 }, result: '他后来考了童生，逢年必来谢你。' },
+      { text: '教他认几个字', effects: { fame: 5, mind: 5 }, result: '他学得认真，像块读书的料。' },
+      { text: '叹气作罢', effects: { mind: -5 }, result: '你帮不了所有人，可心里还是堵。' }
+    ]}
+  ]
+};
+
+// ========== 隐藏命运结局（优先于普通结局） ==========
+const HIDDEN_FATE_ENDINGS = {
+  emperor: { name: '千古一帝', text: '后世帝王皆以你为楷模，你的治国方略被刻在宫殿墙壁上。史书用整整一卷写你，仍觉不够。', cond: s => s.power>=75 && s.fame>=65 && s.wealth>=55 && s.mind>=55 },
+  xia: { name: '剑仙', text: '江湖不再有你的身影，只有你的传说。有人说你已悟剑道极致，踏叶而去，不再食人间烟火。', cond: s => s.mind>=72 && s.power>=48 },
+  merchant: { name: '陶朱公再世', text: '你散尽家财，又白手起家，如此三次。后世商人把你和陶朱公并称，说"世人只知陶朱，不知有君"。', cond: s => s.wealth>=75 && s.mind>=55 },
+  doctor: { name: '活死人', text: '你救过的人太多，民间传说你其实早已死了，只是阎王不敢收。', cond: s => s.fame>=68 && s.mind>=55 }
+};
+// 行为隐藏结局
+const HIDDEN_BEHAVIOR_ENDINGS = {
+  emperor: { name: '焚书', text: '你最后的诏书不是传位，而是命人将宫中所有史书烧掉。你说："朕做过什么，后人不必知道。"火焰烧了三天三夜。', cond: s => s.mind<=15 && s.power>=40 },
+  xia: { name: '断剑', text: '你最后将那柄断剑插在天机谷口，转身离开。从此江湖再无人见过你，只有天机谷口那截断剑，风吹雨打，百年不锈。', cond: s => s.mind>=65 && s.fame>=50 },
+  merchant: { name: '空船', text: '你变卖家产，买了一条空船，顺着江漂流而下。船靠岸时，人们发现里面只有一袋种子。', cond: s => s.wealth>=50 && s.mind>=65 },
+  doctor: { name: '医者不自医', text: '你治好了很多人，自己却死在那场瘟疫里。百姓为你立的碑上写着："活人无算，死于活人。"', cond: s => s.mind<=20 && s.fame>=50 }
+};
+// 女扮男装彩蛋
+const DISGUISE_EGGS = {
+  xia: { name: '百合招亲', text: '成亲当晚，红烛摇曳。小姐轻轻拉住你的袖角，低声说："你……是姐姐吧？"\n（她怎么知道的？你低头一看，自己的耳洞忘了遮）' },
+  emperor: { name: '金枝藏娇', text: '你认下了这个孩子。满朝文武表情精彩至极，却没人敢问一句：这孩子怎么来的？\n（你很想看看他们知道真相那天的表情）' },
+  general: { name: '红妆点将', text: '偏将醉眼朦胧说："将军，你长得真像我表妹。"你一口酒差点喷出来。次日他酒醒，你已披甲点兵，他低头不敢直视。' }
+};
+
+// ========== 普通结局判定规则（按优先级，第一个匹配即生效） ==========
+const ENDING_RULES = {
+  emperor: [
+    { name: '开国雄主', text: '革故鼎新，开创三百年基业。后世帝王祭天时，都要先拜你的画像。', cond: { power: 70, fame: 60, wealth: 45 } },
+    { name: '中兴之主', text: '四海宾服，史称中兴。后世史官写到你时，用了四个字："明君守成。"', cond: { power: 58, fame: 48 } },
+    { name: '仁君', text: '驾崩之日，京师罢市，万民恸哭。史书八字："仁德之主，民不能忘。"', cond: { fame: 55, mind: 50 } },
+    { name: '暴君', text: '你死时，宫中鸣钟，坊间有人笑出声。史书留下四字："桀纣之流。"', cond: { power: 52, fame: 30, fameMax: true } },
+    { name: '修道天子', text: '晚年痴迷方术，丹药而崩。你死的时候，丹炉还冒着烟。', cond: { mind: 25, mindMax: true } },
+    { name: '亡国之君', text: '九鼎易主，社稷倾颓。你坐在空荡荡的大殿里，看着新朝的旗帜升起。', cond: { power: 15, powerMax: true } },
+    { name: '傀儡皇帝', text: '虽居九五，实为提线木偶。你死的时候，手里还握着一道没盖玉玺的诏书。', cond: { power: 32, mind: 35, bothMax: true } },
+    { name: '隐帝', text: '禅位出家，不知所终。多年后，有人在终南山上，见过一个与你很像的樵夫。', cond: {} }
+  ],
+  xia: [
+    { name: '武林盟主', text: '号令天下，莫敢不从。你站在盟主位上，觉得风比从前更冷了。', cond: { power: 60, wealth: 45 } },
+    { name: '一代大侠', text: '侠之大者，为国为民。你的名字被写进话本，成为一代人的记忆。', cond: { fame: 55, mind: 50 } },
+    { name: '隐侠', text: '事了拂衣去，深藏身与名。江湖没有你的身影，但处处都有你的传说。', cond: { mind: 62, fame: 45 } },
+    { name: '殉道者', text: '为信念而死，重于泰山。你死的那天，天上下了一场大雨。', cond: { mind: 60, power: 30, powerMax: true } },
+    { name: '魔头', text: '江湖夜雨，闻其名而色变。你成了传说里的恶鬼，也成了自己最不想成为的人。', cond: { power: 55, fame: 25, fameMax: true } },
+    { name: '刺客', text: '十步杀一人，千里不留行。你死的时候，身边只有一把刀。', cond: { power: 45, mind: 25, mindMax: true } },
+    { name: '游侠', text: '一箫一剑走江湖。你没留下名字，但路上的人记得你的箫声。', cond: {} }
+  ],
+  merchant: [
+    { name: '富可敌国', text: '天下财富，半出其门。你死的时候，账本堆满了三间屋子。', cond: { wealth: 70 } },
+    { name: '商圣', text: '后世商人供你为祖师。你的名字，成了财富的代名词。', cond: { wealth: 60, fame: 45 } },
+    { name: '红顶商人', text: '亦官亦商，煊赫一时。你倒台的那天，才知道自己一直都在刀尖上走路。', cond: { power: 50, wealth: 45 } },
+    { name: '走私巨枭', text: '海上一霸，官军莫敢近。你最后死在了自己的船上，面向大海。', cond: { wealth: 55, fame: 25, fameMax: true } },
+    { name: '大慈善家', text: '百年后，乡人仍念其名。你修的桥还在，你开的路还在。', cond: { fame: 50, mind: 55 } },
+    { name: '儒商', text: '贾而好儒，泽被乡里。你捐的学堂里，后来出了一个状元。', cond: { fame: 50, mind: 45 } },
+    { name: '乡绅', text: '叶落归根，一方之望。你死的时候，全村人都来送你。', cond: { wealth: 35 } },
+    { name: '破产流亡', text: '曾经富贵，皆成云烟。你在破庙里过夜时，想起自己曾经有三条商路。', cond: { wealth: 10, wealthMax: true } }
+  ],
+  official: [
+    { name: '名相', text: '辅佐天子，开一代治世。你的政令，影响了这个国家一百年。', cond: { power: 55, fame: 45 } },
+    { name: '权臣', text: '朝堂之上，一言九鼎。你死之后，皇帝在你的灵前站了很久，没有说话。', cond: { power: 58 } },
+    { name: '帝师', text: '天子待你以师礼，临终托孤。你死的时候，新帝跪在你的床前。', cond: { fame: 55, mind: 50 } },
+    { name: '清官', text: '两袖清风，百姓立生祠。你死的时候，家里只有三箱书。', cond: { fame: 55, wealth: 25, wealthMax: true } },
+    { name: '改革家', text: '厉行新政，虽千万人吾往矣。你没有成功，但你指出的路，后人走通了。', cond: { power: 45, mind: 50 } },
+    { name: '隐退著书', text: '辞官归乡，著书传世。你的书后来被刻在石头上，立在县学门口。', cond: { mind: 60 } },
+    { name: '贪官', text: '金银满屋，最终东窗事发。抄家的士兵打开你的地窖时，惊呆了。', cond: { wealth: 45, fame: 30, fameMax: true } },
+    { name: '党争牺牲品', text: '朝局翻覆，你成了弃子。你被贬出京那天，没有一个人来送。', cond: {} }
+  ],
+  general: [
+    { name: '开国元勋', text: '从龙有功，封侯拜相。你的画像挂在凌烟阁上，供后人瞻仰。', cond: { power: 60, fame: 50 } },
+    { name: '名将', text: '战功赫赫，青史留名。你打的每一场仗，都被后人画成了图。', cond: { fame: 55, power: 45 } },
+    { name: '忠烈', text: '马革裹尸，朝廷追封。你的灵位被供在太庙里，和开国功臣在一起。', cond: { fame: 55, mind: 50 } },
+    { name: '军阀', text: '割据一方，朝廷莫能制。你死之后，你的地盘分裂成了五块。', cond: { power: 58, fame: 30, fameMax: true } },
+    { name: '叛将', text: '起兵反叛，或成或败。历史没有给你一个痛快。', cond: { power: 55, mind: 30, mindMax: true } },
+    { name: '马革裹尸', text: '战死沙场，名留千古。你死的时候，手里还握着半截旗杆。', cond: { fame: 50, mind: 25, mindMax: true } },
+    { name: '弃将', text: '鸟尽弓藏，被朝廷弃用。你死的时候，还在等一封永远不会来的调令。', cond: { power: 20, powerMax: true } },
+    { name: '功成身退', text: '解甲归田，得善终。你在自家院子里种了一棵枣树，每年秋天都结很多枣。', cond: {} }
+  ],
+  hermit: [
+    { name: '山中宰相', text: '隐居山中，天下大事皆问于你。你的茅屋前，经常停着朝中重臣的马车。', cond: { power: 45, fame: 50 } },
+    { name: '世外高人', text: '世人不知你姓名，只知山中有仙。', cond: { mind: 65, fame: 45 } },
+    { name: '门派宗师', text: '开宗立派，弟子满天下。你立的规矩，成了后来所有山门的规矩。', cond: { fame: 55, power: 40 } },
+    { name: '著书立说', text: '你留下的书，影响了后世数百年。', cond: { mind: 60, fame: 45 } },
+    { name: '隐侠', text: '虽隐居，仍暗中行侠。你救过的人，不知道你的名字，只知道山里有个好人。', cond: { fame: 50 } },
+    { name: '被迫出山', text: '终究没能躲开这红尘。你下山那天，回头看了三次。', cond: { power: 40 } },
+    { name: '老死山林', text: '无人知晓你的存在，你也不在乎。你死的时候，山里的花开得很好。', cond: {} }
+  ],
+  artisan: [
+    { name: '匠圣', text: '后世匠人供你为祖师。你的名字，成了"极致"的代名词。', cond: { fame: 60, mind: 50 } },
+    { name: '大匠', text: '你的名字和你的作品一起流传后世。后人看到你做的器物时，都会沉默很久。', cond: { fame: 55 } },
+    { name: '发明家', text: '你造出的东西改变了一个时代。你的名字被写进了工部志。', cond: { power: 50, fame: 45 } },
+    { name: '富匠', text: '以手艺发家，富甲一方。你的工坊里，同时开着一百个炉子。', cond: { wealth: 55 } },
+    { name: '门派创始人', text: '开宗立派，徒子徒孙遍布天下。你的技艺，成了后来所有匠人的必修课。', cond: { fame: 50, power: 45 } },
+    { name: '官营监造', text: '你在官府工坊中权倾一时。你经手的工程，没有一项不让人挑不出毛病。', cond: { power: 50 } },
+    { name: '隐匠', text: '你做的器物散落民间，无人知道出自你手。但懂行的人一看便知："这是一位大匠做的。"', cond: { mind: 55 } },
+    { name: '落魄匠人', text: '手艺再好，也敌不过时运。你死的时候，手边只有一把生锈的凿子。', cond: { wealth: 15, wealthMax: true } }
+  ],
+  doctor: [
+    { name: '神医', text: '世人称你"再世华佗"。你救过的人，多到你自己都数不清。', cond: { fame: 60, mind: 50 } },
+    { name: '仁医', text: '一生清贫，活人无数。你死的时候，十里八乡的人都来送你。', cond: { fame: 55, mind: 50 } },
+    { name: '隐世药王', text: '隐居深山，只有真正有缘人才能找到你。你死之后，你种的药草还在生长。', cond: { mind: 60, fame: 45 } },
+    { name: '御医', text: '出入宫闱，伴君如伴虎。你治好了皇帝的病，却治不好自己的心惊。', cond: { power: 50, wealth: 45 } },
+    { name: '邪教教主', text: '你以医道为名，建立起一个庞大的地下教派。你死之后，教众们还在等你的转世。', cond: { power: 55, fame: 30, fameMax: true } },
+    { name: '毒王', text: '以毒术横行，闻者色变。你死的时候，身上带着七种毒药，每一种都是你自己配的。', cond: { power: 55, mind: 30, mindMax: true } },
+    { name: '炼丹师', text: '沉迷丹道，最终服丹而亡。你死的时候，丹炉里的火还没有熄。', cond: { mind: 28, mindMax: true } },
+    { name: '庸医误人', text: '医术不精，治死了不该治的人。你死的时候，那个人的家人来你坟前泼了一碗药。', cond: {} }
+  ],
+  actor: [
+    { name: '戏圣', text: '后世伶人供你为祖师。你的画像挂在每个戏班的后台，上香的人络绎不绝。', cond: { fame: 60, mind: 50 } },
+    { name: '名伶', text: '你的名字响彻大江南北。你演的每一出戏，都成了后来戏班的必学曲目。', cond: { fame: 55 } },
+    { name: '谏官', text: '以戏为谏，天子亦听你的话。你唱的戏文，有一半进了奏折。', cond: { fame: 50, power: 40 } },
+    { name: '民间史家', text: '你的话本成了后世研究这个时代的第一手史料。你记下的那些事，比正史更真实。', cond: { fame: 50, mind: 45 } },
+    { name: '情报头目', text: '戏台上下，都是你的耳目。你死之后，你经营的那张网才慢慢浮出水面。', cond: { power: 50, fame: 45 } },
+    { name: '戏班班主', text: '你把一个小戏班带成了天下第一。你死之后，戏班还在唱。', cond: { power: 45, fame: 45 } },
+    { name: '转行商贾', text: '你离开了戏台，却活得更安稳。只是偶尔路过戏园子时，你会停下脚步。', cond: { wealth: 50 } },
+    { name: '殉道者', text: '为了一出戏，你丢了性命。你死的那天，戏台下的观众没有一个人走。', cond: {} }
+  ],
+  farmer: [
+    { name: '新朝元勋', text: '你从农民一路走到新朝开国功臣。你的画像挂在太庙里，但你自己却很少去看。', cond: { power: 55, fame: 45 } },
+    { name: '义军领袖', text: '你成了义军首领，名震天下。但你心里清楚，你最初只是想吃饱饭。', cond: { power: 50, fame: 45 } },
+    { name: '地方豪强', text: '你成了地方一霸，官府也得看你脸色。你死之后，你的儿子们把家产分了个干净。', cond: { power: 45, wealth: 40 } },
+    { name: '农学家', text: '你总结的农法被后世沿用。你写的那些经验，后来被刻在县衙门口。', cond: { fame: 50, mind: 45 } },
+    { name: '乡绅', text: '辛苦一辈子，置下家业，成了乡里敬重的人。你死的时候，你的田已经连成了片。', cond: { wealth: 45 } },
+    { name: '战死', text: '你死在了乱世的战场上。你的锄头，最后被铸成了一把刀。', cond: { power: 40, mind: 25, mindMax: true } },
+    { name: '流民', text: '天灾人祸，你最终也成了流民。你死在路边时，身上只有半块干粮。', cond: { wealth: 10, wealthMax: true } },
+    { name: '普通农夫', text: '你活了一辈子，没惊动过谁，也未曾亏待过谁。你死的时候，田里的庄稼正在抽穗。', cond: {} }
+  ]
+};
+
+// ========== 游戏状态 ==========
+let state = null;
+let spinTimer = null;
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+// ========== 访问码 ==========
+function checkGate(){
+  const v = document.getElementById('gate-input').value.trim().toUpperCase();
+  if(v === ACCESS_CODE){
+    sessionStorage.setItem('gugate','1');
+    document.getElementById('gate').style.display='none';
+    document.getElementById('screen-home').classList.add('active');
+    refreshHome();
+  } else {
+    document.getElementById('gate-hint').textContent = '访问码不正确，请重新输入。';
+    document.getElementById('gate-input').value='';
+  }
+}
+document.getElementById('gate-input').addEventListener('keydown', e=>{ if(e.key==='Enter') checkGate(); });
+
+// ========== 屏幕切换 ==========
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+function goHome(){ showScreen('screen-home'); refreshHome(); }
+
+function getRounds(){ return parseInt(localStorage.getItem('gugame_rounds')||'0',10); }
+function addRound(){ localStorage.setItem('gugame_rounds', String(getRounds()+1)); }
+
+function refreshHome(){
+  const r = getRounds();
+  const btn = document.getElementById('btn-select-role');
+  const hint = document.getElementById('round-hint');
+  if(r >= 3){
+    btn.disabled = false;
+    hint.textContent = `已历 ${r} 局命运，可自选身份开局。`;
+  } else {
+    btn.disabled = true;
+    hint.textContent = `（前 3 轮随机命运，之后可自选身份。已历 ${r} 局）`;
+  }
+}
+
+// ========== 抽取命运 ==========
+function drawFate(){
+  state = { pendingRole: pick(ROLE_KEYS) };
+  showScreen('screen-draw');
+  document.getElementById('draw-result').style.display='none';
+  document.getElementById('btn-to-name').style.display='none';
+  const spin = document.getElementById('spinning-role');
+  let i = 0;
+  if(spinTimer) clearInterval(spinTimer);
+  spinTimer = setInterval(()=>{
+    spin.textContent = ROLES[ROLE_KEYS[i % ROLE_KEYS.length]].name;
+    i++;
+  }, 80);
+  setTimeout(()=>{
+    clearInterval(spinTimer);
+    spin.textContent = ROLES[state.pendingRole].name;
+    const res = document.getElementById('draw-result');
+    res.style.display='block';
+    res.innerHTML = '你抽中了：<br><span style="color:var(--accent); font-size:22px; font-weight:bold; letter-spacing:6px;">' + ROLES[state.pendingRole].name + '</span>';
+    document.getElementById('btn-to-name').style.display='block';
+  }, 2000);
+}
+
+// ========== 角色选择 ==========
+function showRoleSelect(){
+  const grid = document.getElementById('role-grid');
+  grid.innerHTML = '';
+  const played = JSON.parse(localStorage.getItem('gugame_played')||'[]');
+  ROLE_KEYS.forEach(k=>{
+    const b = document.createElement('button');
+    b.className = 'role-btn' + (played.indexOf(k)>=0 ? ' played' : '');
+    b.textContent = ROLES[k].name;
+    b.onclick = ()=>{ state = { pendingRole: k }; goToName(); };
+    grid.appendChild(b);
+  });
+  showScreen('screen-roles');
+}
+
+// ========== 设定姓名 ==========
+function goToName(){
+  document.getElementById('input-surname').value='';
+  document.getElementById('input-givenname').value='';
+  document.getElementById('input-courtesy').value='';
+  showScreen('screen-name');
+}
+
+function genName(){
+  // 性别与女扮男装判定
+  const role = ROLES[state.pendingRole];
+  let gender = '男';
+  let femaleDisguise = false;
+  if(role.genderRelevant){
+    const r = Math.random();
+    if(r < 0.4){ gender = '女'; }
+    if(r < 0.15){ gender = '男'; femaleDisguise = true; }
+  }
+  let surname = document.getElementById('input-surname').value.trim();
+  let givenname = document.getElementById('input-givenname').value.trim();
+  let courtesy = document.getElementById('input-courtesy').value.trim();
+  if(!surname) surname = pick(SURNAMES);
+  if(!givenname) givenname = pick(GIVENNAMES);
+  if(!courtesy){
+    if(femaleDisguise) courtesy = pick(COURTESY.male);
+    else if(gender === '女') courtesy = pick(COURTESY.female);
+    else courtesy = pick(COURTESY.neutral.concat(COURTESY.male));
+  }
+  state.surname = surname;
+  state.givenname = givenname;
+  state.courtesy = courtesy;
+  state.gender = gender;
+  state.femaleDisguise = femaleDisguise;
+  state.role = state.pendingRole;
+}
+
+function startGame(){
+  genName();
+  const role = ROLES[state.role];
+  const box = document.getElementById('intro-box');
+  const genderDisplay = state.femaleDisguise ? '男（？）' : state.gender;
+  box.innerHTML =
+    '<div class="row">姓名：' + state.surname + state.givenname + '</div>' +
+    '<div class="row">字：' + state.courtesy + '</div>' +
+    '<div class="row">性别：' + genderDisplay + '</div>' +
+    '<div class="role-line">' + role.name + '</div>';
+  showScreen('screen-intro');
+}
+
+function beginPlay(){
+  const role = ROLES[state.role];
+  state.stats = Object.assign({}, role.initial);
+  state.history = [];
+  // 构建事件队列：6 核心，第2回合后插1隐藏，第4回合后插1通用小事件
+  state.queue = [];
+  const usedHidden = {};
+  const usedMinor = {};
+  for(let i=0;i<6;i++){
+    state.queue.push({type:'core', idx:i});
+    if(i===1){
+      const hid = HIDDEN_EVENTS[state.role];
+      let hi, tries=0;
+      do { hi = Math.floor(Math.random()*hid.length); tries++; } while(usedHidden[hi] && tries<10);
+      usedHidden[hi]=true;
+      state.queue.push({type:'hidden', idx:hi});
+    }
+    if(i===3){
+      let mi, tries=0;
+      do { mi = Math.floor(Math.random()*MINOR_EVENTS.length); tries++; } while(usedMinor[mi] && tries<10);
+      usedMinor[mi]=true;
+      state.queue.push({type:'minor', idx:mi});
+    }
+  }
+  state.ptr = 0;
+  showScreen('screen-game');
+  renderStats();
+  showCurrent();
+}
+
+function renderStats(){
+  const role = ROLES[state.role];
+  const genderDisplay = state.femaleDisguise ? '男（？）' : state.gender;
+  let statsHtml = '';
+  ['power','fame','wealth','mind'].forEach(k=>{
+    statsHtml += '<span>' + STAT_ICONS[k] + state.stats[k] + '</span>';
+  });
+  document.getElementById('stats-bar').innerHTML =
+    '<div class="name-row">' + state.surname + state.givenname + ' | ' + genderDisplay + ' | ' + role.name + ' | 字：' + state.courtesy + '</div>' +
+    '<div class="stat-row">' + statsHtml + '</div>';
+}
+
+function getEventByType(item){
+  if(item.type==='core') return CORE_EVENTS[state.role][item.idx];
+  if(item.type==='hidden') return HIDDEN_EVENTS[state.role][item.idx];
+  if(item.type==='minor') return MINOR_EVENTS[item.idx];
+}
+
+function showCurrent(){
+  const item = state.queue[state.ptr];
+  const ev = getEventByType(item);
+  const content = document.getElementById('game-content');
+  let titleHtml = '';
+  if(item.type==='core'){
+    titleHtml = '<div class="event-title">◆ 第 ' + (item.idx+1) + ' 回合 · ' + ev.title + '</div>';
+  } else if(item.type==='hidden'){
+    titleHtml = '<div class="event-title" style="color:var(--dark-red);">◇ ' + ev.title + '</div>';
+  } else {
+    titleHtml = '<div class="event-title" style="color:var(--muted);">· 途遇 · ' + ev.title + '</div>';
+  }
+  let optsHtml = '';
+  ev.options.forEach((o,i)=>{
+    optsHtml += '<button class="option" onclick="chooseOption(' + i + ')">' + o.text + '</button>';
+  });
+  content.innerHTML = titleHtml + '<div class="event-text">' + ev.text + '</div>' + optsHtml;
+  document.getElementById('game-btns').innerHTML='';
+}
+
+function formatEffects(eff){
+  if(!eff || Object.keys(eff).length===0) return '（无变化）';
+  const parts = [];
+  for(const k in eff){
+    let v = eff[k], label = STAT_NAMES[k];
+    if(k==='wealth' && v<=-999){ parts.push('财富清零'); continue; }
+    parts.push(label + ' ' + (v>=0 ? '+' : '') + v);
+  }
+  return '（' + parts.join('，') + '）';
+}
+
+function applyEffects(eff){
+  if(!eff) return;
+  for(const k in eff){
+    let v = eff[k];
+    if(k==='wealth' && v<=-999){ state.stats.wealth = 0; continue; }
+    state.stats[k] = Math.max(0, Math.min(100, state.stats[k] + v));
+  }
+}
+
+function checkCond(cond){
+  if(!cond) return true;
+  const s = state.stats;
+  const bothMax = cond.bothMax === true;
+  const keys = ['power','fame','wealth','mind'];
+  for(const k of keys){
+    if(cond[k] === undefined) continue;
+    const useMax = bothMax || cond[k+'Max'] === true;
+    if(useMax){ if(!(s[k] <= cond[k])) return false; }
+    else { if(!(s[k] >= cond[k])) return false; }
+  }
+  return true;
+}
+
+function chooseOption(optIdx){
+  const item = state.queue[state.ptr];
+  const ev = getEventByType(item);
+  const opt = ev.options[optIdx];
+  let effects, result, note='';
+  // 风险事件
+  if(opt.risk){
+    const ok = Math.random() < 0.5;
+    if(ok){ effects = opt.effects; result = opt.result; }
+    else { effects = opt.riskEffects; result = opt.riskText; note='（事与愿违）'; }
+  } else if(opt.condition){
+    // 条件事件
+    if(checkCond(opt.condition)){ effects = opt.effects; result = opt.result; }
+    else { effects = opt.failEffects; result = opt.failResult; note='（未能如愿）'; }
+  } else {
+    effects = opt.effects; result = opt.result;
+  }
+  applyEffects(effects);
+  renderStats();
+  state.history.push({ title: ev.title, choice: opt.text, result: result });
+  const content = document.getElementById('game-content');
+  content.innerHTML =
+    '<div class="event-title">你选择了：' + opt.text + '</div>' +
+    '<div class="result-text">' + result + '</div>' +
+    '<div class="effect-text">' + formatEffects(effects) + (note?' '+note:'') + '</div>';
+  document.getElementById('game-btns').innerHTML = '<button class="btn" onclick="continueGame()">［继 续］</button>';
+}
+
+function continueGame(){
+  state.ptr++;
+  if(state.ptr >= state.queue.length){ endGame(); }
+  else { renderStats(); showCurrent(); }
+}
+
+function matchEnding(){
+  const s = state.stats;
+  const role = state.role;
+  // 隐藏命运结局优先
+  if(HIDDEN_FATE_ENDINGS[role] && HIDDEN_FATE_ENDINGS[role].cond(s)){
+    return { name: HIDDEN_FATE_ENDINGS[role].name, text: HIDDEN_FATE_ENDINGS[role].text, hidden: 'fate' };
+  }
+  // 行为隐藏结局
+  if(HIDDEN_BEHAVIOR_ENDINGS[role] && HIDDEN_BEHAVIOR_ENDINGS[role].cond(s)){
+    return { name: HIDDEN_BEHAVIOR_ENDINGS[role].name, text: HIDDEN_BEHAVIOR_ENDINGS[role].text, hidden: 'behavior' };
+  }
+  // 普通结局
+  const rules = ENDING_RULES[role];
+  for(const r of rules){
+    if(checkCond(r.cond)) return { name: r.name, text: r.text, hidden: null };
+  }
+  const last = rules[rules.length-1];
+  return { name: last.name, text: last.text, hidden: null };
+}
+
+function checkEgg(){
+  if(state.femaleDisguise && DISGUISE_EGGS[state.role] && state.stats.power>=50){
+    return DISGUISE_EGGS[state.role];
+  }
+  return null;
+}
+
+function endGame(){
+  addRound();
+  // 记录已玩角色
+  const played = JSON.parse(localStorage.getItem('gugame_played')||'[]');
+  if(played.indexOf(state.role)<0){ played.push(state.role); localStorage.setItem('gugame_played', JSON.stringify(played)); }
+  const ending = matchEnding();
+  const egg = checkEgg();
+  const s = state.stats;
+  let html = '<div class="ending-title">' + ending.name + '</div>';
+  if(ending.hidden){
+    html += '<div class="hidden-title">— 隐藏结局 —</div>';
+  }
+  html += '<div class="result-text">' + ending.text + '</div>';
+  if(egg){
+    html += '<hr class="divider"><div class="easter-egg">获得隐藏称号「' + egg.name + '」</div>';
+    html += '<div class="result-text" style="font-style:italic;">' + egg.text + '</div>';
+  }
+  html += '<hr class="divider">';
+  html += '<div class="ending-stats">最终数值</div>';
+  html += '<div class="ending-stats">⚔ 权势 ' + s.power + ' &nbsp; ⚘ 名望 ' + s.fame + ' &nbsp; ❖ 财富 ' + s.wealth + ' &nbsp; ☯ 心境 ' + s.mind + '</div>';
+  html += '<hr class="divider"><div class="ending-stats">一生梗概</div>';
+  state.history.forEach(h=>{
+    html += '<div class="ending-history">· ' + h.title + '：' + h.choice + '</div>';
+  });
+  document.getElementById('ending-content').innerHTML = html;
+  saveHistory(ending, egg);
+  showScreen('screen-ending');
+}
+
+function saveHistory(ending, egg){
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem('guhistory')||'[]'); } catch(e){ arr=[]; }
+  arr.unshift({
+    role: state.role, roleName: ROLES[state.role].name,
+    name: state.surname + state.givenname, courtesy: state.courtesy,
+    gender: state.femaleDisguise ? '男（？）' : state.gender,
+    ending: ending.name, hidden: ending.hidden,
+    egg: egg ? egg.name : null,
+    stats: Object.assign({}, state.stats),
+    time: new Date().toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+  });
+  if(arr.length > 30) arr = arr.slice(0,30);
+  localStorage.setItem('guhistory', JSON.stringify(arr));
+}
+
+function showHistory(){
+  let arr = [];
+  try { arr = JSON.parse(localStorage.getItem('guhistory')||'[]'); } catch(e){ arr=[]; }
+  const box = document.getElementById('history-content');
+  if(arr.length===0){
+    box.innerHTML = '<p class="subtitle" style="margin-top:40px;">尚无历史结局，去抽取你的第一段命运吧。</p>';
+  } else {
+    let html = '';
+    arr.forEach((h,i)=>{
+      let detail = '⚔' + h.stats.power + '  ⚘' + h.stats.fame + '  ❖' + h.stats.wealth + '  ☯' + h.stats.mind;
+      if(h.hidden) detail += '  · 隐藏';
+      if(h.egg) detail += '  · 彩蛋「' + h.egg + '」';
+      html += '<div class="history-item" onclick="this.querySelector(\'.h-detail\').style.display = this.querySelector(\'.h-detail\').style.display===\'block\'?\'none\':\'block\'">' +
+        '<div class="h-title">' + h.name + ' · ' + h.roleName + ' — ' + h.ending + '</div>' +
+        '<div class="h-detail">' + h.time + '　字：' + h.courtesy + '　性别：' + h.gender + '<br>' + detail + '</div>' +
+        '</div>';
+    });
+    html += '<button class="btn" style="margin-top:16px;" onclick="if(confirm(\'清空所有历史结局？\')){localStorage.removeItem(\'guhistory\');localStorage.removeItem(\'gugame_played\');localStorage.removeItem(\'gugame_rounds\');showHistory();}">清空历史</button>';
+    box.innerHTML = html;
+  }
+  showScreen('screen-history');
+}
+
+// ========== 初始化 ==========
+(function init(){
+  if(sessionStorage.getItem('gugate')==='1'){
+    document.getElementById('gate').style.display='none';
+    document.getElementById('screen-home').classList.add('active');
+    refreshHome();
+  } else {
+    setTimeout(()=>document.getElementById('gate-input').focus(), 100);
+  }
+})();
+</script>
+</body>
+</html>
+
