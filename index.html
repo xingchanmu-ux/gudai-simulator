@@ -107,7 +107,7 @@ body {
 .input-field { width: 100%; padding: 10px 12px; margin: 6px 0; background: var(--panel); border: 1px solid var(--border); color: var(--text); font-size: 16px; font-family: inherit; outline: none; }
 .input-field:focus { border-color: var(--accent); }
 .label { color: var(--muted); font-size: 13px; margin-top: 10px; }
-.gender-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin: 6px 0 12px; }
+.gender-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 6px 0 12px; }
 .gender-btn { padding: 10px 4px; background: var(--panel); border: 1px solid #2A2A2A; color: var(--muted); font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
 .gender-btn:hover { border-color: var(--border); color: var(--text); }
 .gender-btn.active { border-color: var(--accent); color: var(--accent); background: #1A1A1A; }
@@ -149,9 +149,11 @@ body {
     </div>
     <div class="scroll-area" style="display:flex; flex-direction:column; justify-content:center;">
       <button class="btn" onclick="drawFate()">✦ 抽取命运</button>
+      <button class="btn" id="btn-destiny" onclick="peekDestiny()" style="display:none;">✧ 窥探天命</button>
       <button class="btn" onclick="showHistory()">◈ 历史结局</button>
       <button class="btn" id="btn-select-role" onclick="showRoleSelect()" disabled>◆ 开始新局</button>
       <p class="subtitle" id="round-hint">（前 3 轮随机命运，之后可自选身份）</p>
+      <p class="subtitle" id="ten-lives-hint" style="display:none; color:var(--border); font-style:italic; margin-top:24px;">第十一种人生，是你自己。</p>
     </div>
   </div>
 
@@ -180,14 +182,13 @@ body {
       <input class="input-field" id="input-courtesy" placeholder="如：明远" maxlength="2">
       <p class="subtitle">（留空则自动生成）</p>
       <div id="gender-select" style="display:none;">
-        <p class="label">性别（此身份男女命途有别）</p>
+        <p class="label">性别（男女命途略有不同，皆可成事）</p>
         <div class="gender-grid" id="gender-grid">
           <button class="gender-btn active" data-gender="random">随机</button>
           <button class="gender-btn" data-gender="男">男</button>
           <button class="gender-btn" data-gender="女">女</button>
-          <button class="gender-btn" data-gender="女扮男装">女扮男装</button>
         </div>
-        <p class="gender-hint" id="gender-hint">女扮男装为隐藏玩法，权势达 50 触发彩蛋</p>
+        <p class="gender-hint" id="gender-hint">男女之间差异有限，仅个别事件略有不同</p>
       </div>
     </div>
     <div class="bottom-btns">
@@ -673,35 +674,35 @@ const MINOR_EVENTS = [
     { text: '起哄退票', effects: { fame: -5 }, result: '老板把你轰了出去。' }
   ]},
   { title: '深夜歌声', text: '你夜宿客栈，听见隔壁有人低声唱歌，调子哀婉。', options: [
-    { text: '敲门询问', effects: { mind: 3 }, result: '门开了，是一个思念故人的旅人。' },
-    { text: '塞张纸条过去', effects: { fame: 3 }, result: '第二天，你在桌上看到一句谢。' },
-    { text: '用被子蒙头', effects: { mind: -3 }, result: '可那歌声，你一夜都没忘。' }
+    { text: '敲门询问', effects: { mind: 5 }, result: '门开了，唱歌的是个赶考的举子。' },
+    { text: '塞张纸条过去', effects: { fame: 2 }, result: '第二天早上，你的门缝下多了一首诗。' },
+    { text: '用被子蒙头', effects: {}, result: '你用被子蒙住头，歌声还是钻了进来。' }
   ]},
-  // 16-20 补写
-  { title: '故人遗物', text: '你在旧物摊上看见一枚熟悉的玉佩，似是故人之物。', options: [
-    { text: '买下', effects: { wealth: -5, mind: 8 }, result: '你摩挲着玉佩，想起了许多旧事。' },
-    { text: '问问摊主来历', effects: { mind: 3 }, result: '摊主说不清，只说是从一座旧坟边收来的。' },
-    { text: '放下离去', effects: { mind: -3 }, result: '你走了几步，又回头看了它一眼。' }
+  // 16-20 用户最终版
+  { title: '卖伞小童', text: '突然下雨，一个小童抱着一堆伞叫卖，价格翻倍。', options: [
+    { text: '买一把', effects: { wealth: -2, mind: 3 }, result: '伞很小，但够用了。' },
+    { text: '说"黑心"', effects: { fame: -2 }, result: '小童朝你吐了吐舌头。' },
+    { text: '抱起小童跑到屋檐下', effects: { fame: 5, mind: 5 }, result: '小童在你怀里大笑，伞掉了一地。' }
   ]},
-  { title: '醉汉拦路', text: '一个醉汉拦住你，硬说你欠他十两银子。', options: [
-    { text: '绕开走', effects: { mind: -2 }, result: '他在身后骂了半天，你头也没回。' },
-    { text: '请他喝碗醒酒汤', effects: { wealth: -2, fame: 5 }, result: '他清醒后，红着脸给你作了个揖。' },
-    { text: '与他理论', effects: { fame: -3 }, result: '围观的人越来越多，你最后只好赔笑。' }
+  { title: '墙头猫', text: '一只猫困在你院子里的大树上，喵喵叫。', options: [
+    { text: '爬树救猫', effects: { fame: 3 }, result: '猫下来了，你的袖子破了一个口子。' },
+    { text: '放条鱼引诱它下来', effects: { wealth: -1, mind: 5 }, result: '猫跳了下来，把你给的鱼吃得精光。' },
+    { text: '不管', effects: {}, result: '猫最后自己跳了下来，还踩了你一脚。' }
   ]},
-  { title: '神秘棋局', text: '路边有人摆下一局残棋，说"破局者赏银十两"。', options: [
-    { text: '下场一试', effects: { mind: 8, wealth: 10 }, result: '你落子三步，摆棋人脸色大变。', risk: true, riskEffects: { wealth: -3 }, riskText: '你输了，按规矩留下三两茶钱。' },
-    { text: '看两眼，看破不说破', effects: { mind: 5 }, result: '你笑了笑，转身走了。' },
-    { text: '围观', effects: { mind: 2 }, result: '你看了半天，也没看出门道。' }
+  { title: '旧书摊', text: '你逛旧书摊，发现一本手抄书，封面写着《笑林广记》。', options: [
+    { text: '买下', effects: { wealth: -3, mind: 8 }, result: '你抱着书回家，读了一整夜。' },
+    { text: '翻两页不买', effects: { mind: 3 }, result: '你翻了翻，记住了几个笑话。' },
+    { text: '讲个书中笑话给摊主听', effects: { fame: 3 }, result: '摊主笑得直拍桌子。' }
   ]},
-  { title: '走失孩童', text: '一个走失的孩童在路边哭，问你认不认得他家。', options: [
-    { text: '带他去找家人', effects: { fame: 8, mind: 5 }, result: '他母亲抱着他，哭得比孩子还凶。' },
-    { text: '给他买个饼，让他等', effects: { wealth: -2, mind: 3 }, result: '你走时，他还在原地啃饼。' },
-    { text: '报官', effects: { fame: 3 }, result: '衙役把他领走了，说会发告示。' }
+  { title: '河灯', text: '中元节，河边有人放灯，也递给你一盏。', options: [
+    { text: '写下愿望放了', effects: { mind: 5 }, result: '灯漂远了，你看着它变成了一个小点。' },
+    { text: '说"我不信这个"', effects: {}, result: '你把灯还了回去。' },
+    { text: '帮孩子放灯', effects: { fame: 3, mind: 5 }, result: '孩子的灯差点翻了，你伸手扶了一把。' }
   ]},
-  { title: '旧物重生', text: '你翻出一把生锈的旧刀（或旧物），弃之可惜。', options: [
-    { text: '找人打磨翻新', effects: { wealth: -5, mind: 8 }, result: '旧物焕然一新，你看着它出了神。' },
-    { text: '随手送人', effects: { fame: 5 }, result: '收下的人如获至宝。' },
-    { text: '当废铁卖了', effects: { wealth: 3 }, result: '铁匠接过它时，眼神却有些古怪。' }
+  { title: '无名碑', text: '你在城外荒草中发现一块无名石碑，碑上只有四个字："莫问归途"。', options: [
+    { text: '拜一拜', effects: { mind: 5 }, result: '你拜了拜，心里出奇地平静。' },
+    { text: '拓下碑文', effects: { fame: 2 }, result: '拓片上的字，比碑上更清楚。' },
+    { text: '不理会', effects: {}, result: '你走远了，那块碑还在那里。' }
   ]}
 ];
 
@@ -1000,6 +1001,37 @@ const DISGUISE_EGGS = {
   general: { name: '红妆点将', text: '偏将醉眼朦胧说："将军，你长得真像我表妹。"你一口酒差点喷出来。次日他酒醒，你已披甲点兵，他低头不敢直视。' }
 };
 
+// ========== 跨角色隐藏彩蛋 ==========
+// 十世轮转：玩遍10个角色后，主界面提示
+// 史官：历史结局积累到一定数量后，历史列表底部出现批注
+// 天命：累计3局以上，主页出现"窥探天命"按钮，可查看本局命运倾向
+const META_EGGS = {
+  tenLives: {
+    name: '十世轮转',
+    text: '你已看遍十种人生。某天，你在游戏中醒来，发现所有角色都站在你面前。他们齐声说："该你上场了。"'
+  },
+  historian: {
+    name: '史官',
+    text: '历史结局列表满了。你从头翻到尾，发现每一局的你在史书里都只有一行字。最下面多出一行："余者，未可尽书。"'
+  },
+  destiny: {
+    name: '天命',
+    text: '天命有常，而你已触及其边缘。'
+  }
+};
+
+// 判断本局命运倾向
+function getDestinyHint(){
+  const role = ROLES[state.role];
+  const s = state.stats;
+  let max = 'power', maxV = s.power;
+  if(s.fame > maxV){ max='fame'; maxV=s.fame; }
+  if(s.wealth > maxV){ max='wealth'; maxV=s.wealth; }
+  if(s.mind > maxV){ max='mind'; maxV=s.mind; }
+  const map = { power:'权势', fame:'名望', wealth:'财富', mind:'心境' };
+  return '此命格偏重 ' + map[max] + '（' + maxV + '），' + role.name + '之途，以此为锋。';
+}
+
 // ========== 普通结局判定规则（按优先级，第一个匹配即生效） ==========
 const ENDING_RULES = {
   emperor: [
@@ -1138,6 +1170,8 @@ function refreshHome(){
   const r = getRounds();
   const btn = document.getElementById('btn-select-role');
   const hint = document.getElementById('round-hint');
+  const destinyBtn = document.getElementById('btn-destiny');
+  const tenLivesHint = document.getElementById('ten-lives-hint');
   if(r >= 3){
     btn.disabled = false;
     hint.textContent = `已历 ${r} 局命运，可自选身份开局。`;
@@ -1145,6 +1179,28 @@ function refreshHome(){
     btn.disabled = true;
     hint.textContent = `（前 3 轮随机命运，之后可自选身份。已历 ${r} 局）`;
   }
+  // 天命：累计3局以上可窥探
+  if(destinyBtn){
+    destinyBtn.style.display = (r >= 3) ? 'block' : 'none';
+  }
+  // 十世轮转：玩遍10个角色
+  const played = JSON.parse(localStorage.getItem('gugame_played')||'[]');
+  if(tenLivesHint){
+    tenLivesHint.style.display = (played.length >= 10) ? 'block' : 'none';
+  }
+}
+
+// 窥探天命：查看本局命运倾向（仅在抽取命运后、开局前有效）
+function peekDestiny(){
+  if(!state || !state.role){
+    alert('请先抽取命运或选择身份，再来窥探天命。');
+    return;
+  }
+  if(!state.stats){
+    alert('命运尚未开始，天机不可泄露。');
+    return;
+  }
+  alert(META_EGGS.destiny.text + '\n\n' + getDestinyHint());
 }
 
 // ========== 抽取命运 ==========
@@ -1192,15 +1248,18 @@ function goToName(){
   document.getElementById('input-courtesy').value='';
   const role = ROLES[state.pendingRole];
   const gs = document.getElementById('gender-select');
+  const hint = document.getElementById('gender-hint');
+  // 所有角色都显示性别选择
+  gs.style.display='block';
+  state.pendingGender = 'random';
+  document.querySelectorAll('#gender-grid .gender-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.gender==='random');
+  });
+  // 根据角色差异化提示
   if(role.genderRelevant){
-    gs.style.display='block';
-    state.pendingGender = 'random';
-    document.querySelectorAll('#gender-grid .gender-btn').forEach(b=>{
-      b.classList.toggle('active', b.dataset.gender==='random');
-    });
+    hint.textContent = '此身份男女命途有别，部分事件不同';
   } else {
-    gs.style.display='none';
-    state.pendingGender = 'random';
+    hint.textContent = '男女之间差异有限，仅个别事件略有不同';
   }
   showScreen('screen-name');
 }
@@ -1219,15 +1278,16 @@ function genName(){
   let gender = '男';
   let femaleDisguise = false;
   const sel = state.pendingGender || 'random';
-  if(sel === '男'){ gender = '男'; }
+  if(sel === '男'){
+    gender = '男';
+    // 选"男"时有概率触发女扮男装（约15%）
+    if(Math.random() < 0.15){ femaleDisguise = true; }
+  }
   else if(sel === '女'){ gender = '女'; }
-  else if(sel === '女扮男装'){ gender = '男'; femaleDisguise = true; }
   else { // random
-    if(role.genderRelevant){
-      const r = Math.random();
-      if(r < 0.4){ gender = '女'; }
-      if(r < 0.15){ gender = '男'; femaleDisguise = true; }
-    }
+    const r = Math.random();
+    if(r < 0.4){ gender = '女'; }
+    else if(r < 0.55){ gender = '男'; femaleDisguise = true; }
   }
   let surname = document.getElementById('input-surname').value.trim();
   let givenname = document.getElementById('input-givenname').value.trim();
@@ -1431,10 +1491,22 @@ function endGame(){
   const ending = matchEnding();
   const egg = checkEgg();
   const s = state.stats;
+  // 统计本局经历
+  let coreCount = 0, hiddenCount = 0, minorCount = 0;
+  state.queue.forEach(item => {
+    if(item.type === 'core') coreCount++;
+    else if(item.type === 'hidden') hiddenCount++;
+    else if(item.type === 'minor') minorCount++;
+  });
+  const role = ROLES[state.role];
+  const genderDisplay = state.femaleDisguise ? '男（？）' : state.gender;
   let html = '<div class="ending-title">' + ending.name + '</div>';
   if(ending.hidden){
     html += '<div class="hidden-title">— 隐藏结局 —</div>';
   }
+  // 角色信息
+  html += '<div class="ending-stats" style="text-align:center; margin:8px 0;">姓名：' + state.surname + state.givenname + ' · 字：' + state.courtesy + ' · ' + genderDisplay + ' · ' + role.name + '</div>';
+  html += '<hr class="divider">';
   html += '<div class="result-text">' + ending.text + '</div>';
   if(egg){
     html += '<hr class="divider"><div class="easter-egg">获得隐藏称号「' + egg.name + '」</div>';
@@ -1443,6 +1515,8 @@ function endGame(){
   html += '<hr class="divider">';
   html += '<div class="ending-stats">最终数值</div>';
   html += '<div class="ending-stats">⚔ 权势 ' + s.power + ' &nbsp; ⚘ 名望 ' + s.fame + ' &nbsp; ❖ 财富 ' + s.wealth + ' &nbsp; ☯ 心境 ' + s.mind + '</div>';
+  html += '<hr class="divider"><div class="ending-stats">本局经历</div>';
+  html += '<div class="ending-stats" style="color:var(--muted);">◆ 核心事件 ' + coreCount + ' 次 &nbsp; ◇ 隐藏事件 ' + hiddenCount + ' 次 &nbsp; · 小事件 ' + minorCount + ' 次</div>';
   html += '<hr class="divider"><div class="ending-stats">一生梗概</div>';
   state.history.forEach(h=>{
     html += '<div class="ending-history">· ' + h.title + '：' + h.choice + '</div>';
@@ -1485,6 +1559,12 @@ function showHistory(){
         '<div class="h-detail">' + h.time + '　字：' + h.courtesy + '　性别：' + h.gender + '<br>' + detail + '</div>' +
         '</div>';
     });
+    // 史官批注：历史结局积累到一定数量（>=20）出现
+    if(arr.length >= 20){
+      html += '<hr class="divider">';
+      html += '<div class="hidden-title" style="margin-top:16px;">— 史官批注 —</div>';
+      html += '<div class="result-text" style="font-style:italic; color:var(--muted);">' + META_EGGS.historian.text + '</div>';
+    }
     html += '<button class="btn" style="margin-top:16px;" onclick="if(confirm(\'清空所有历史结局？\')){localStorage.removeItem(\'guhistory\');localStorage.removeItem(\'gugame_played\');localStorage.removeItem(\'gugame_rounds\');showHistory();}">清空历史</button>';
     box.innerHTML = html;
   }
