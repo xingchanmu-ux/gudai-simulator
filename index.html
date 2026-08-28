@@ -149,11 +149,22 @@ body {
     </div>
     <div class="scroll-area" style="display:flex; flex-direction:column; justify-content:center;">
       <button class="btn" onclick="drawFate()">✦ 抽取命运</button>
+      <button class="btn" id="btn-select-skill" onclick="selectSkill()" style="display:none;">❖ 自选特长</button>
       <button class="btn" id="btn-destiny" onclick="peekDestiny()" style="display:none;">✧ 窥探天命</button>
       <button class="btn" onclick="showHistory()">◈ 历史结局</button>
       <button class="btn" id="btn-select-role" onclick="showRoleSelect()" disabled>◆ 开始新局</button>
+      <button class="btn" id="btn-free-mode" onclick="toggleFreeMode()" style="display:none;">✦ 自由模式（全50开局）</button>
       <p class="subtitle" id="round-hint">（前 3 轮随机命运，之后可自选身份）</p>
+      <p class="subtitle" id="unlock-hint" style="display:none; color:var(--accent); font-style:italic; margin-top:12px; white-space:pre-line;"></p>
       <p class="subtitle" id="ten-lives-hint" style="display:none; color:var(--border); font-style:italic; margin-top:24px;">第十一种人生，是你自己。</p>
+    </div>
+  </div>
+
+  <!-- 自选特长界面 -->
+  <div class="screen" id="screen-skill-select">
+    <div class="scroll-area" id="skill-select-content"></div>
+    <div class="bottom-btns">
+      <button class="btn" onclick="goHome()">← 返回主页</button>
     </div>
   </div>
 
@@ -813,7 +824,41 @@ const FATE_EVENTS = [
   }
 ];
 
-// ========== 隐藏随机事件 (每角色5) ==========
+// ========== 隐藏技能（方向二：每局开局随机1个特长，影响特定选项）==========
+const HIDDEN_SKILLS = [
+  { name: '能言善辩', desc: '涉及说服的选项，成功率+20%', match: opt => opt.text.includes('说') || opt.text.includes('劝') || opt.text.includes('言'), bonus: 0.2 },
+  { name: '武艺超群', desc: '涉及武力的选项，成功率+20%', match: opt => opt.text.includes('杀') || opt.text.includes('战') || opt.text.includes('打') || opt.text.includes('斗'), bonus: 0.2 },
+  { name: '医术入门', desc: '涉及救人的选项，成功率+25%', match: opt => opt.text.includes('救') || opt.text.includes('医') || opt.text.includes('治'), bonus: 0.25 },
+  { name: '过目不忘', desc: '涉及识破/记忆的选项，成功率+15%', match: opt => opt.text.includes('识') || opt.text.includes('破') || opt.text.includes('记') || opt.text.includes('辨'), bonus: 0.15 },
+  { name: '酒量极佳', desc: '涉及酒宴的选项，额外+名望', match: opt => opt.text.includes('酒') || opt.text.includes('饮') || opt.text.includes('醉'), bonus: 0.0, extraEffects: { fame: 3 } },
+  { name: '家底殷实', desc: '开局额外+15财富', match: () => false, bonus: 0.0, startEffects: { wealth: 15 } },
+  { name: '天生命硬', desc: '心境低于20时，心境额外+5', match: () => false, bonus: 0.0, trigger: 'lowMind' },
+  { name: '福气深厚', desc: '天命卡效果增强50%', match: () => false, bonus: 0.0, trigger: 'boostDestiny' }
+];
+
+// ========== 天命卡（方向三：每局抽1张，影响特定判定）==========
+const DESTINY_CARDS = [
+  { name: '贵人相助', desc: '某一次失败判定自动转为成功', type: 'autoSuccess' },
+  { name: '命犯小人', desc: '某一次成功判定转为失败', type: 'autoFail' },
+  { name: '天降横财', desc: '第3回合后，财富+20', type: 'turn3Wealth', value: 20 },
+  { name: '无妄之灾', desc: '第4回合后，随机属性-15', type: 'turn4Loss', value: 15 },
+  { name: '桃花劫', desc: '第2回合后，心境-10', type: 'turn2Mind', value: -10 },
+  { name: '大器晚成', desc: '第6回合所有判定+10', type: 'turn6Bonus', value: 10 },
+  { name: '少年得志', desc: '第1回合所有数值+8', type: 'turn1Boost', value: 8 },
+  { name: '命途多舛', desc: '所有风险事件成功率-15%', type: 'riskMinus', value: 0.15 },
+  { name: '逢凶化吉', desc: '所有风险事件成功率+15%', type: 'riskPlus', value: 0.15 },
+  { name: '平平无奇', desc: '本局无特殊加成', type: 'none' }
+];
+
+// ========== 多周目解锁（方向五扩展）==========
+const UNLOCKS = {
+  // 累计5个不同结局 → 开局可自选特长
+  customSkill: { cond: () => JSON.parse(localStorage.getItem('gugame_endings') || '[]').length >= 5, msg: '已解锁：开局可自选特长（在抽取命运界面下方会出现"自选特长"按钮）' },
+  // 累计10个结局 → 解锁隐藏角色「说书人」
+  storyteller: { cond: () => JSON.parse(localStorage.getItem('gugame_endings') || '[]').length >= 10, msg: '已解锁：隐藏角色「说书人」' },
+  // 全角色通关 → 解锁自由模式（全50开局）
+  freeMode: { cond: () => JSON.parse(localStorage.getItem('gugame_played') || '[]').length >= 10, msg: '已解锁：自由模式（数值全50开局）' }
+};
 const HIDDEN_EVENTS = {
   emperor: [
     { title: '夜半笛声', text: '宫中夜半传来笛声，循声而去，是一小太监在吹。', options: [
@@ -1295,6 +1340,60 @@ function refreshHome(){
   if(tenLivesHint){
     tenLivesHint.style.display = (played.length >= 10) ? 'block' : 'none';
   }
+  // 多周目解锁（方向五扩展）
+  const endings = JSON.parse(localStorage.getItem('gugame_endings')||'[]');
+  let unlockMsg = '';
+  if(UNLOCKS.customSkill.cond()) unlockMsg += UNLOCKS.customSkill.msg + '\n';
+  if(UNLOCKS.storyteller.cond()) unlockMsg += UNLOCKS.storyteller.msg + '\n';
+  if(UNLOCKS.freeMode.cond()) unlockMsg += UNLOCKS.freeMode.msg + '\n';
+  const unlockHint = document.getElementById('unlock-hint');
+  if(unlockHint){
+    if(unlockMsg){
+      unlockHint.style.display = 'block';
+      unlockHint.textContent = unlockMsg.trim();
+    } else {
+      unlockHint.style.display = 'none';
+    }
+  }
+  // 自选特长按钮（累计5个结局解锁）
+  const skillBtn = document.getElementById('btn-select-skill');
+  if(skillBtn){
+    skillBtn.style.display = UNLOCKS.customSkill.cond() ? 'block' : 'none';
+  }
+  // 自由模式按钮（全角色通关解锁）
+  const freeBtn = document.getElementById('btn-free-mode');
+  if(freeBtn){
+    freeBtn.style.display = UNLOCKS.freeMode.cond() ? 'block' : 'none';
+  }
+}
+
+// 自选特长
+function selectSkill(){
+  const box = document.getElementById('intro-box');
+  let html = '<div class="event-title">请选一项特长</div>';
+  HIDDEN_SKILLS.forEach((s, i) => {
+    html += '<button class="option" onclick="pickSkill(' + i + ')">' + s.name + ' · ' + s.desc + '</button>';
+  });
+  html += '<button class="option" onclick="pickSkill(-1)">随机抽取</button>';
+  document.getElementById('screen-skill-select').classList.add('active');
+  document.getElementById('screen-home').classList.remove('active');
+  document.getElementById('skill-select-content').innerHTML = html;
+}
+
+function pickSkill(idx){
+  state.pendingSkill = (idx === -1) ? null : idx;
+  document.getElementById('screen-skill-select').classList.remove('active');
+  // 直接走抽取命运流程
+  drawFate();
+}
+
+// 切换自由模式
+function toggleFreeMode(){
+  state.useFreeMode = !state.useFreeMode;
+  const btn = document.getElementById('btn-free-mode');
+  if(btn){
+    btn.textContent = state.useFreeMode ? '✦ 自由模式 已开启（点击关闭）' : '✦ 自由模式（全50开局）';
+  }
 }
 
 // 窥探天命：查看本局命运倾向（仅在抽取命运后、开局前有效）
@@ -1412,6 +1511,16 @@ function genName(){
   state.gender = gender;
   state.femaleDisguise = femaleDisguise;
   state.role = state.pendingRole;
+  // 抽取隐藏技能 + 天命卡（方向二 + 方向三）
+  if(state.pendingSkill !== undefined && state.pendingSkill !== null){
+    state.skill = HIDDEN_SKILLS[state.pendingSkill];
+  } else {
+    state.skill = HIDDEN_SKILLS[Math.floor(Math.random()*HIDDEN_SKILLS.length)];
+  }
+  state.destinyCard = DESTINY_CARDS[Math.floor(Math.random()*DESTINY_CARDS.length)];
+  state.destinyUsed = false; // 用于"贵人相助/命犯小人"一次性卡
+  state.endingBranchShown = false;
+  state.endingBranchChoice = null;
 }
 
 function startGame(){
@@ -1419,11 +1528,18 @@ function startGame(){
   const role = ROLES[state.role];
   const box = document.getElementById('intro-box');
   const genderDisplay = state.femaleDisguise ? '男（？）' : state.gender;
-  box.innerHTML =
+  let html =
     '<div class="row">姓名：' + state.surname + state.givenname + '</div>' +
     '<div class="row">字：' + state.courtesy + '</div>' +
     '<div class="row">性别：' + genderDisplay + '</div>' +
     '<div class="role-line">' + role.name + '</div>';
+  // 显示隐藏技能
+  html += '<div class="row" style="color:var(--accent); margin-top:14px;">【特长】' + state.skill.name + '</div>';
+  html += '<div class="row" style="color:var(--muted); font-size:13px;">' + state.skill.desc + '</div>';
+  // 显示天命卡
+  html += '<div class="row" style="color:var(--dark-red); margin-top:8px;">【天命】' + state.destinyCard.name + '</div>';
+  html += '<div class="row" style="color:var(--muted); font-size:13px;">' + state.destinyCard.desc + '</div>';
+  box.innerHTML = html;
   showScreen('screen-intro');
 }
 
@@ -1431,6 +1547,16 @@ function beginPlay(){
   const role = ROLES[state.role];
   state.stats = Object.assign({}, role.initial);
   state.history = [];
+  // 应用隐藏技能的开局效果（如"家底殷实"+15财富）
+  if(state.skill && state.skill.startEffects){
+    for(const k in state.skill.startEffects){
+      state.stats[k] = Math.max(0, Math.min(100, state.stats[k] + state.skill.startEffects[k]));
+    }
+  }
+  // 自由模式：全50开局（需解锁）
+  if(state.useFreeMode){
+    state.stats = { power: 50, fame: 50, wealth: 50, mind: 50 };
+  }
   // 构建事件队列：6 核心，第2回合后插1隐藏，第4回合后插1通用小事件，第5回合后插1命运分配
   state.queue = [];
   const usedHidden = {};
@@ -1459,6 +1585,13 @@ function beginPlay(){
   showScreen('screen-game');
   renderStats();
   showCurrent();
+  // 天命卡：少年得志（第1回合+8所有数值）
+  if(state.destinyCard && state.destinyCard.type === 'turn1Boost'){
+    ['power','fame','wealth','mind'].forEach(k => {
+      state.stats[k] = Math.max(0, Math.min(100, state.stats[k] + state.destinyCard.value));
+    });
+    renderStats();
+  }
 }
 
 function renderStats(){
@@ -1556,9 +1689,9 @@ function rollFate(){
   document.getElementById('game-btns').innerHTML = '<button class="btn" onclick="continueGame()">［继 续］</button>';
 }
 
-function checkCond(cond){
+function checkCond(cond, stats){
   if(!cond) return true;
-  const s = state.stats;
+  const s = stats || state.stats;
   const bothMax = cond.bothMax === true;
   const keys = ['power','fame','wealth','mind'];
   for(const k of keys){
@@ -1577,15 +1710,47 @@ function chooseOption(optIdx){
   let effects, result, note='';
   // 风险事件
   if(opt.risk){
-    const ok = Math.random() < 0.5;
+    let successRate = 0.5;
+    // 隐藏技能加成
+    if(state.skill && state.skill.match && state.skill.match(opt)){
+      successRate += state.skill.bonus;
+    }
+    // 天命卡：逢凶化吉/命途多舛
+    if(state.destinyCard){
+      if(state.destinyCard.type === 'riskPlus') successRate += state.destinyCard.value;
+      if(state.destinyCard.type === 'riskMinus') successRate -= state.destinyCard.value;
+    }
+    successRate = Math.max(0.05, Math.min(0.95, successRate));
+    let ok = Math.random() < successRate;
+    // 天命卡：贵人相助（一次性，失败转成功）
+    if(!ok && state.destinyCard && state.destinyCard.type === 'autoSuccess' && !state.destinyUsed){
+      ok = true; state.destinyUsed = true; note='（天命·贵人相助触发）';
+    }
+    // 天命卡：命犯小人（一次性，成功转失败）
+    if(ok && state.destinyCard && state.destinyCard.type === 'autoFail' && !state.destinyUsed){
+      ok = false; state.destinyUsed = true; note='（天命·命犯小人触发）';
+    }
     if(ok){ effects = opt.effects; result = opt.result; }
-    else { effects = opt.riskEffects; result = opt.riskText; note='（事与愿违）'; }
+    else { effects = opt.riskEffects; result = opt.riskText; note=(note?note+' ':'') + '（事与愿违）'; }
   } else if(opt.condition){
     // 条件事件
     if(checkCond(opt.condition)){ effects = opt.effects; result = opt.result; }
     else { effects = opt.failEffects; result = opt.failResult; note='（未能如愿）'; }
   } else {
     effects = opt.effects; result = opt.result;
+  }
+  // 隐藏技能：酒量极佳的额外效果
+  if(state.skill && state.skill.extraEffects && state.skill.match && state.skill.match(opt)){
+    const extra = Object.assign({}, state.skill.extraEffects);
+    effects = Object.assign({}, effects);
+    for(const k in extra){ effects[k] = (effects[k] || 0) + extra[k]; }
+    note = (note?note+' ':'') + '（特长·' + state.skill.name + '触发）';
+  }
+  // 隐藏技能：天生命硬（心境低于20时补5）
+  if(state.skill && state.skill.trigger === 'lowMind' && state.stats.mind < 20){
+    effects = Object.assign({}, effects);
+    effects.mind = (effects.mind || 0) + 5;
+    note = (note?note+' ':'') + '（特长·天生命硬触发）';
   }
   applyEffects(effects);
   renderStats();
@@ -1600,13 +1765,48 @@ function chooseOption(optIdx){
 
 function continueGame(){
   state.ptr++;
-  if(state.ptr >= state.queue.length){ endGame(); }
-  else { renderStats(); showCurrent(); }
+  if(state.ptr >= state.queue.length){
+    // 最后一回合结束，先显示终章之问（结局分支）
+    if(!state.endingBranchShown){
+      state.endingBranchShown = true;
+      showEndingBranch();
+      return;
+    }
+    endGame(); return;
+  }
+  // 天命卡：回合触发型
+  const next = state.queue[state.ptr];
+  if(next && next.type === 'core'){
+    const turnIdx = next.idx; // 0-5对应第1-6回合
+    if(state.destinyCard){
+      // 第2回合后：桃花劫（心境-10）
+      if(state.destinyCard.type === 'turn2Mind' && turnIdx === 1){
+        state.stats.mind = Math.max(0, state.stats.mind + state.destinyCard.value);
+        state.destinyCard = { name: '平平无奇', desc: '本局无特殊加成', type: 'none' };
+      }
+      // 第3回合后：天降横财（财富+20）
+      if(state.destinyCard.type === 'turn3Wealth' && turnIdx === 2){
+        state.stats.wealth = Math.max(0, Math.min(100, state.stats.wealth + state.destinyCard.value));
+        state.destinyCard = { name: '平平无奇', desc: '本局无特殊加成', type: 'none' };
+      }
+      // 第4回合后：无妄之灾（随机属性-15）
+      if(state.destinyCard.type === 'turn4Loss' && turnIdx === 3){
+        const keys = ['power','fame','wealth','mind'];
+        const rk = keys[Math.floor(Math.random()*4)];
+        state.stats[rk] = Math.max(0, state.stats[rk] - state.destinyCard.value);
+        state.destinyCard = { name: '平平无奇', desc: '本局无特殊加成', type: 'none' };
+      }
+    }
+  }
+  renderStats();
+  showCurrent();
 }
 
 function matchEnding(){
-  const s = state.stats;
   const role = state.role;
+  // 大器晚成：第6回合所有判定+10
+  const bonus = (state.destinyCard && state.destinyCard.type === 'turn6Bonus') ? state.destinyCard.value : 0;
+  const s = bonus ? { power: state.stats.power+bonus, fame: state.stats.fame+bonus, wealth: state.stats.wealth+bonus, mind: state.stats.mind+bonus } : state.stats;
   // 隐藏命运结局优先
   if(HIDDEN_FATE_ENDINGS[role] && HIDDEN_FATE_ENDINGS[role].cond(s)){
     return { name: HIDDEN_FATE_ENDINGS[role].name, text: HIDDEN_FATE_ENDINGS[role].text, hidden: 'fate' };
@@ -1618,7 +1818,7 @@ function matchEnding(){
   // 普通结局
   const rules = ENDING_RULES[role];
   for(const r of rules){
-    if(checkCond(r.cond)) return { name: r.name, text: r.text, hidden: null };
+    if(checkCond(r.cond, s)) return { name: r.name, text: r.text, hidden: null };
   }
   const last = rules[rules.length-1];
   return { name: last.name, text: last.text, hidden: null };
@@ -1639,6 +1839,18 @@ function endGame(){
   const ending = matchEnding();
   const egg = checkEgg();
   const s = state.stats;
+  // 结局分支选择（方向六）：玩家最后话语权
+  const branchChoice = state.endingBranchChoice;
+  let endingText = ending.text;
+  let branchNote = '';
+  if(branchChoice === 'A'){
+    branchNote = '\n\n[后人秉笔直书，善恶皆录。]';
+  } else if(branchChoice === 'B'){
+    branchNote = '\n\n[你抹去所有痕迹，史册留白，无人知晓你来过。]';
+  } else if(branchChoice === 'C'){
+    branchNote = '\n\n[后世所载，皆你所愿，真假已不可考。]';
+  }
+  endingText += branchNote;
   // 统计本局经历
   let coreCount = 0, hiddenCount = 0, minorCount = 0, fateCount = 0;
   state.queue.forEach(item => {
@@ -1656,7 +1868,13 @@ function endGame(){
   // 角色信息
   html += '<div class="ending-stats" style="text-align:center; margin:8px 0;">姓名：' + state.surname + state.givenname + ' · 字：' + state.courtesy + ' · ' + genderDisplay + ' · ' + role.name + '</div>';
   html += '<hr class="divider">';
-  html += '<div class="result-text">' + ending.text + '</div>';
+  html += '<div class="result-text">' + endingText + '</div>';
+  // 显示特长与天命卡
+  if(state.skill || state.destinyCard){
+    html += '<hr class="divider"><div class="ending-stats">本局天命</div>';
+    if(state.skill) html += '<div class="ending-stats" style="color:var(--accent);">【特长】' + state.skill.name + ' · ' + state.skill.desc + '</div>';
+    if(state.destinyCard) html += '<div class="ending-stats" style="color:var(--dark-red);">【天命】' + state.destinyCard.name + ' · ' + state.destinyCard.desc + '</div>';
+  }
   if(egg){
     html += '<hr class="divider"><div class="easter-egg">获得隐藏称号「' + egg.name + '」</div>';
     html += '<div class="result-text" style="font-style:italic;">' + egg.text + '</div>';
@@ -1675,6 +1893,25 @@ function endGame(){
   showScreen('screen-ending');
 }
 
+// 结局分支选择（方向六）
+function chooseEndingBranch(choice){
+  state.endingBranchChoice = choice;
+  // 显示最终结局
+  endGame();
+}
+
+// 在最后一回合后插入结局分支选择
+function showEndingBranch(){
+  const content = document.getElementById('game-content');
+  content.innerHTML =
+    '<div class="event-title" style="color:var(--accent);">✦ 终章之问</div>' +
+    '<div class="event-text">你走到今天这一步，最后问你一个问题——\n你希望后人如何评价你？</div>' +
+    '<button class="option" onclick="chooseEndingBranch(\'A\')">A. 我做过的事，如实写</button>' +
+    '<button class="option" onclick="chooseEndingBranch(\'B\')">B. 别写我</button>' +
+    '<button class="option" onclick="chooseEndingBranch(\'C\')">C. 把我写成我想要的样子</button>';
+  document.getElementById('game-btns').innerHTML='';
+}
+
 function saveHistory(ending, egg){
   let arr = [];
   try { arr = JSON.parse(localStorage.getItem('guhistory')||'[]'); } catch(e){ arr=[]; }
@@ -1689,6 +1926,14 @@ function saveHistory(ending, egg){
   });
   if(arr.length > 30) arr = arr.slice(0,30);
   localStorage.setItem('guhistory', JSON.stringify(arr));
+  // 多周目解锁：记录不同结局（用于解锁判定）
+  let endings = [];
+  try { endings = JSON.parse(localStorage.getItem('gugame_endings')||'[]'); } catch(e){ endings=[]; }
+  const ekey = state.role + ':' + ending.name;
+  if(endings.indexOf(ekey) < 0){
+    endings.push(ekey);
+    localStorage.setItem('gugame_endings', JSON.stringify(endings));
+  }
 }
 
 function showHistory(){
