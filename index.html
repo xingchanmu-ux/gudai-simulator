@@ -706,6 +706,113 @@ const MINOR_EVENTS = [
   ]}
 ];
 
+// ========== 命运分配事件（网络梗题型风格：列出选项+随机分配）==========
+// 每个事件展示"我同时发布了XX和XX"，玩家点"查看分配"后随机抽一个结果
+const FATE_EVENTS = [
+  {
+    title: '梦中·阎王殿点名',
+    text: '梦中你被带到阎王殿。判官翻开生死簿，意味深长地说：\n\n"我同时发布了——\n寿元八十 ｜ 寿元六十 ｜ 寿元四十 ｜ 寿元二十\n\n你被分配到了……"\n\n他顿了顿，露出一抹古怪的笑。',
+    rolls: [
+      { assign: '八十', effects: { mind: 10 }, result: '判官点头："八十归八十，但其中三十年要在病榻上度过。"你醒来，腰有点酸，竟莫名觉得踏实。' },
+      { assign: '六十', effects: { mind: 5, fame: 5 }, result: '判官说："六十，平平安安，儿女送终。"你醒来，心里格外静。' },
+      { assign: '四十', effects: { mind: -8, fame: 15 }, result: '判官合上簿子："四十，但最后五年你会做一件大事，足以留名青史。"你醒来，心神不宁又隐隐兴奋。' },
+      { assign: '二十', effects: { mind: -15, power: 15 }, result: '判官叹气："二十，但你会死得很壮烈，被后人写进话本。"你醒来，手心都是汗，却听见远处似有战鼓。' }
+    ]
+  },
+  {
+    title: '月老祠·红线',
+    text: '月老祠前，老人把四根红线摆在你面前：\n\n"我同时发布了——\n白头偕老 ｜ 半路夫妻 ｜ 露水姻缘 ｜ 孤鸾寡宿\n\n你被分配到了……"\n\n他抓起一根，朝你抛来。',
+    rolls: [
+      { assign: '白头偕老', effects: { mind: 12 }, result: '红线缠在你腕上。老人笑："此人未必是你最爱，但陪你到最后。"你忽然想回家。' },
+      { assign: '半路夫妻', effects: { mind: -3, wealth: 8 }, result: '红线缠了一半就断。老人叹："情深缘浅，留一段回忆。"你想起一个人。' },
+      { assign: '露水姻缘', effects: { fame: 8, mind: -2 }, result: '红线轻轻一触即散。老人笑："一夜风流，半生谈资。"你脸有点热。' },
+      { assign: '孤鸾寡宿', effects: { mind: -10, power: 10 }, result: '红线落在地上，无人来拾。老人摇头："无人可伴，便去谋你的天下吧。"你心头一凉，却莫名升起野心。' }
+    ]
+  },
+  {
+    title: '功名榜前',
+    text: '放榜之日，你挤在人群里。报子高声唱名：\n\n"我同时发布了——\n状元 ｜ 榜眼 ｜ 探花 ｜ 进士 ｜ 落第\n\n你被分配到了……"\n\n你屏住呼吸。',
+    rolls: [
+      { assign: '状元', effects: { fame: 20, power: 10 }, result: '你的名字赫然在首。人群炸开，有人已经开始给你家送贺礼。' },
+      { assign: '榜眼', effects: { fame: 12, power: 5 }, result: '第二名。你松了口气，又有点不甘。' },
+      { assign: '探花', effects: { fame: 10, mind: 5 }, result: '第三名。报子笑："探花郎，赴琼林宴时可要作首好诗。"' },
+      { assign: '进士', effects: { fame: 5 }, result: '二甲进士。不算风光，也算有了出身。你擦了擦汗。' },
+      { assign: '落第', effects: { mind: -12, fame: -3 }, result: '榜上无名。你转身挤出人群，听见身后有人议论"又是个范进"。' }
+    ]
+  },
+  {
+    title: '转生井·前世',
+    text: '一口古井前，老僧让你往下看。井底浮现四个画面：\n\n"我同时发布了——\n王侯将相 ｜ 富商巨贾 ｜ 寒门书生 ｜ 贩夫走卒\n\n你的前世，被分配到了……"\n\n井水晃动。',
+    rolls: [
+      { assign: '王侯将相', effects: { power: 8, mind: -3 }, result: '你看见金碧辉煌的宫殿。老僧叹："前世太贵，今生要还。"你心生傲气，却隐隐不安。' },
+      { assign: '富商巨贾', effects: { wealth: 12 }, result: '你看见堆满银钱的库房。老僧笑："前世积富，今生不愁吃穿。"' },
+      { assign: '寒门书生', effects: { mind: 8, fame: 3 }, result: '你看见一盏青灯，一卷书。老僧点头："清贫，但有风骨。"' },
+      { assign: '贩夫走卒', effects: { mind: -5, wealth: 3 }, result: '你看见一个挑担的背影。老僧合掌："劳碌命，但心善。"你莫名鼻酸。' }
+    ]
+  },
+  {
+    title: '庙会·命运签',
+    text: '庙会，老道士摆着签筒，对你眨眼：\n\n"我同时发布了——\n上上签 ｜ 上签 ｜ 中签 ｜ 下签 ｜ 下下签\n\n你被分配到了……"\n\n他递过一支签。',
+    rolls: [
+      { assign: '上上签', effects: { fame: 10, wealth: 8, mind: 5 }, result: '签文："十年内，必有贵人"。你大喜，多塞了香火钱。' },
+      { assign: '上签', effects: { mind: 8, fame: 3 }, result: '签文："诸事顺遂，唯忌口舌"。你笑着收起。' },
+      { assign: '中签', effects: { mind: 2 }, result: '签文："平平淡淡，才是真福"。你撇撇嘴，也收下了。' },
+      { assign: '下签', effects: { mind: -8 }, result: '签文："谨防小人在侧"。你皱眉，老道士补一句："心诚则灵。"更不安了。' },
+      { assign: '下下签', effects: { mind: -15, power: 5 }, result: '签文："大凶"。你脸色发白，老道士低声："或可破，看你造化。"回去路上，每一步都发凉。' }
+    ]
+  },
+  {
+    title: '茶馆·说书人',
+    text: '茶馆里，说书人敲响醒木：\n\n"今日我们讲一桩旧事。我同时发布了——\n英雄救美 ｜ 美人救英雄 ｜ 渔翁得利 ｜ 两败俱伤\n\n你被分配到了……"\n\n众人起哄，他一指你。',
+    rolls: [
+      { assign: '英雄救美', effects: { fame: 10, mind: 5 }, result: '"却说那日，你拔刀相助，佳人一见倾心……"你听着，脸有点红。' },
+      { assign: '美人救英雄', effects: { fame: 5, mind: 8 }, result: '"你身陷囹圄，一女子掷银救你……"茶馆里响起一片啧啧声。' },
+      { assign: '渔翁得利', effects: { wealth: 10, fame: -3 }, result: '"两人相争，你在旁捡了漏。"有人笑，有人撇嘴，你只是喝茶。' },
+      { assign: '两败俱伤', effects: { mind: -8, fame: -5 }, result: '"你与对手斗法，同归于尽……"你差点把茶碗扣了，众人却哄堂大笑。' }
+    ]
+  },
+  {
+    title: '客栈·盲盒菜',
+    text: '客栈老板神秘兮兮端上四个盖着盖子的碟子：\n\n"我同时发布了——\n熊掌 ｜ 豆腐 ｜ 野菜 ｜ ……（一只鞋？）\n\n你被分配到了……"\n\n他让你自己揭盖。',
+    rolls: [
+      { assign: '熊掌', effects: { wealth: -8, mind: 5 }, result: '果然是熊掌。你大快朵颐，但账单也吓人。' },
+      { assign: '豆腐', effects: { mind: 3 }, result: '一碟小葱拌豆腐。清清白白，老板笑："清淡养人。"' },
+      { assign: '野菜', effects: { wealth: 2, mind: 2 }, result: '一碟野菜。老板说："山珍。"你尝了尝，还真是。' },
+      { assign: '一只鞋', effects: { mind: -10, fame: 5 }, result: '你揭开盖，愣住——一只旧布鞋。老板正色："此乃祖传之物，寓意脚踏实地。"满堂哄笑，你成了一夜的笑谈。' }
+    ]
+  },
+  {
+    title: '街头·相面',
+    text: '街头相士拉住你，端详半天：\n\n"我同时发布了——\n帝王之相 ｜ 封侯之相 ｜ 富翁之相 ｜ 寡人之相\n\n你被分配到了……"\n\n他捋着胡须。',
+    rolls: [
+      { assign: '帝王之相', effects: { power: 8, mind: -5 }, result: '"龙眉凤眼，可惜生不逢时。"他叹气。你心头一动，又觉得是江湖话术。' },
+      { assign: '封侯之相', effects: { fame: 8, power: 3 }, result: '"虎背熊腰，当有封侯之运。"你大喜，多给了赏钱。' },
+      { assign: '富翁之相', effects: { wealth: 10 }, result: '"天庭饱满，财帛宫丰隆。"他笑。你摸摸自己的脑门。' },
+      { assign: '寡人之相', effects: { mind: -8 }, result: '"……寡人之相，孤苦无依。"他摇头。你脸一沉："胡说！"但回去的路上，话还是扎在心里。' }
+    ]
+  },
+  {
+    title: '赌坊·一掷',
+    text: '赌坊老板推来四个碗，反扣在桌上：\n\n"我同时发布了——\n十两 ｜ 五十两 ｜ 五百两 ｜ 空手\n\n你被分配到了……"\n\n他催你下注。',
+    rolls: [
+      { assign: '十两', effects: { wealth: 5 }, result: '碗里是十两。老板笑："小赚即安，也是福气。"' },
+      { assign: '五十两', effects: { wealth: 15 }, result: '碗里是五十两。你心满意足。' },
+      { assign: '五百两', effects: { wealth: 35, mind: -3 }, result: '碗里是五百两！你倒吸一口凉气，老板脸色发白："今日真是……走运。"' },
+      { assign: '空手', effects: { wealth: -10, mind: -5 }, result: '碗一翻，空的。老板摊手："愿赌服输。"你出门时，风有点凉。' }
+    ]
+  },
+  {
+    title: '深夜·狐仙',
+    text: '夜深，一只白狐拦住你，自称狐仙：\n\n"我同时发布了——\n才气 ｜ 美貌 ｜ 长寿 ｜ 麻烦\n\n你被分配到了……"\n\n它尾巴一摇。',
+    rolls: [
+      { assign: '才气', effects: { fame: 10, mind: 3 }, result: '"赠你才气，下笔成文。"你回去后，果然文思泉涌。' },
+      { assign: '美貌', effects: { fame: 12, mind: -3 }, result: '"赠你一副好皮囊。"你照镜子，连自己都愣了一下。' },
+      { assign: '长寿', effects: { mind: 10 }, result: '"赠你十年阳寿。"它说完就消失。你只觉身子轻了几分。' },
+      { assign: '麻烦', effects: { mind: -10, fame: 5 }, result: '"这个嘛……赠你一段姻缘，是福是祸，自己参悟。"你还没来得及问，它已不见。第二天，有人上门提亲。' }
+    ]
+  }
+];
+
 // ========== 隐藏随机事件 (每角色5) ==========
 const HIDDEN_EVENTS = {
   emperor: [
@@ -1324,7 +1431,7 @@ function beginPlay(){
   const role = ROLES[state.role];
   state.stats = Object.assign({}, role.initial);
   state.history = [];
-  // 构建事件队列：6 核心，第2回合后插1隐藏，第4回合后插1通用小事件
+  // 构建事件队列：6 核心，第2回合后插1隐藏，第4回合后插1通用小事件，第5回合后插1命运分配
   state.queue = [];
   const usedHidden = {};
   const usedMinor = {};
@@ -1342,6 +1449,10 @@ function beginPlay(){
       do { mi = Math.floor(Math.random()*MINOR_EVENTS.length); tries++; } while(usedMinor[mi] && tries<10);
       usedMinor[mi]=true;
       state.queue.push({type:'minor', idx:mi});
+    }
+    if(i===4){
+      // 第5回合后插入命运分配事件
+      state.queue.push({type:'fate', idx: Math.floor(Math.random()*FATE_EVENTS.length)});
     }
   }
   state.ptr = 0;
@@ -1366,6 +1477,7 @@ function getEventByType(item){
   if(item.type==='core') return CORE_EVENTS[state.role][item.idx];
   if(item.type==='hidden') return HIDDEN_EVENTS[state.role][item.idx];
   if(item.type==='minor') return MINOR_EVENTS[item.idx];
+  if(item.type==='fate') return FATE_EVENTS[item.idx];
 }
 
 function showCurrent(){
@@ -1377,13 +1489,20 @@ function showCurrent(){
     titleHtml = '<div class="event-title">◆ 第 ' + (item.idx+1) + ' 回合 · ' + ev.title + '</div>';
   } else if(item.type==='hidden'){
     titleHtml = '<div class="event-title" style="color:var(--dark-red);">◇ ' + ev.title + '</div>';
+  } else if(item.type==='fate'){
+    titleHtml = '<div class="event-title" style="color:var(--accent);">✦ 命运 · ' + ev.title + '</div>';
   } else {
     titleHtml = '<div class="event-title" style="color:var(--muted);">· 途遇 · ' + ev.title + '</div>';
   }
   let optsHtml = '';
-  ev.options.forEach((o,i)=>{
-    optsHtml += '<button class="option" onclick="chooseOption(' + i + ')">' + o.text + '</button>';
-  });
+  if(item.type==='fate'){
+    // 命运事件：只显示"查看分配"按钮，点击后随机分配
+    optsHtml = '<button class="btn" style="margin-top:16px; border-color:var(--accent); color:var(--accent); letter-spacing:4px;" onclick="rollFate()">揭 · 命运之签</button>';
+  } else {
+    ev.options.forEach((o,i)=>{
+      optsHtml += '<button class="option" onclick="chooseOption(' + i + ')">' + o.text + '</button>';
+    });
+  }
   content.innerHTML = titleHtml + '<div class="event-text">' + ev.text + '</div>' + optsHtml;
   document.getElementById('game-btns').innerHTML='';
 }
@@ -1418,6 +1537,23 @@ function applyEffects(eff){
     v = scaleEffect(v);
     state.stats[k] = Math.max(0, Math.min(100, state.stats[k] + v));
   }
+}
+
+// 命运分配事件：玩家点"揭签"后，从rolls里随机抽一个结果
+function rollFate(){
+  const item = state.queue[state.ptr];
+  const ev = getEventByType(item);
+  const roll = ev.rolls[Math.floor(Math.random()*ev.rolls.length)];
+  applyEffects(roll.effects);
+  renderStats();
+  state.history.push({ title: ev.title, choice: '命运分配：' + roll.assign, result: roll.result });
+  const content = document.getElementById('game-content');
+  content.innerHTML =
+    '<div class="event-title" style="color:var(--accent);">✦ 命运降临</div>' +
+    '<div class="event-text" style="text-align:center; color:var(--accent); font-size:20px; letter-spacing:6px; margin:16px 0;">' + roll.assign + '</div>' +
+    '<div class="result-text">' + roll.result + '</div>' +
+    '<div class="effect-text">' + formatEffects(roll.effects) + '</div>';
+  document.getElementById('game-btns').innerHTML = '<button class="btn" onclick="continueGame()">［继 续］</button>';
 }
 
 function checkCond(cond){
@@ -1504,11 +1640,12 @@ function endGame(){
   const egg = checkEgg();
   const s = state.stats;
   // 统计本局经历
-  let coreCount = 0, hiddenCount = 0, minorCount = 0;
+  let coreCount = 0, hiddenCount = 0, minorCount = 0, fateCount = 0;
   state.queue.forEach(item => {
     if(item.type === 'core') coreCount++;
     else if(item.type === 'hidden') hiddenCount++;
     else if(item.type === 'minor') minorCount++;
+    else if(item.type === 'fate') fateCount++;
   });
   const role = ROLES[state.role];
   const genderDisplay = state.femaleDisguise ? '男（？）' : state.gender;
@@ -1528,7 +1665,7 @@ function endGame(){
   html += '<div class="ending-stats">最终数值</div>';
   html += '<div class="ending-stats">⚔ 权势 ' + s.power + ' &nbsp; ⚘ 名望 ' + s.fame + ' &nbsp; ❖ 财富 ' + s.wealth + ' &nbsp; ☯ 心境 ' + s.mind + '</div>';
   html += '<hr class="divider"><div class="ending-stats">本局经历</div>';
-  html += '<div class="ending-stats" style="color:var(--muted);">◆ 核心事件 ' + coreCount + ' 次 &nbsp; ◇ 隐藏事件 ' + hiddenCount + ' 次 &nbsp; · 小事件 ' + minorCount + ' 次</div>';
+  html += '<div class="ending-stats" style="color:var(--muted);">◆ 核心事件 ' + coreCount + ' 次 &nbsp; ◇ 隐藏事件 ' + hiddenCount + ' 次 &nbsp; · 小事件 ' + minorCount + ' 次 &nbsp; ✦ 命运分配 ' + fateCount + ' 次</div>';
   html += '<hr class="divider"><div class="ending-stats">一生梗概</div>';
   state.history.forEach(h=>{
     html += '<div class="ending-history">· ' + h.title + '：' + h.choice + '</div>';
