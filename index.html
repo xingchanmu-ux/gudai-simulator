@@ -107,6 +107,11 @@ body {
 .input-field { width: 100%; padding: 10px 12px; margin: 6px 0; background: var(--panel); border: 1px solid var(--border); color: var(--text); font-size: 16px; font-family: inherit; outline: none; }
 .input-field:focus { border-color: var(--accent); }
 .label { color: var(--muted); font-size: 13px; margin-top: 10px; }
+.gender-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin: 6px 0 12px; }
+.gender-btn { padding: 10px 4px; background: var(--panel); border: 1px solid #2A2A2A; color: var(--muted); font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
+.gender-btn:hover { border-color: var(--border); color: var(--text); }
+.gender-btn.active { border-color: var(--accent); color: var(--accent); background: #1A1A1A; }
+.gender-hint { color: var(--dark-red); font-size: 12px; margin: 4px 0 8px; font-style: italic; }
 .scroll-area { flex: 1; overflow-y: auto; padding: 16px 0; }
 .bottom-btns { padding: 12px 0; border-top: 1px solid #2A2A2A; }
 .spinning-text { text-align: center; color: var(--accent); font-size: 24px; font-weight: bold; letter-spacing: 4px; animation: pulse 0.15s ease infinite; margin: 30px 0; }
@@ -174,6 +179,16 @@ body {
       <p class="label">字（可留空，自动生成）</p>
       <input class="input-field" id="input-courtesy" placeholder="如：明远" maxlength="2">
       <p class="subtitle">（留空则自动生成）</p>
+      <div id="gender-select" style="display:none;">
+        <p class="label">性别（此身份男女命途有别）</p>
+        <div class="gender-grid" id="gender-grid">
+          <button class="gender-btn active" data-gender="random">随机</button>
+          <button class="gender-btn" data-gender="男">男</button>
+          <button class="gender-btn" data-gender="女">女</button>
+          <button class="gender-btn" data-gender="女扮男装">女扮男装</button>
+        </div>
+        <p class="gender-hint" id="gender-hint">女扮男装为隐藏玩法，权势达 50 触发彩蛋</p>
+      </div>
     </div>
     <div class="bottom-btns">
       <button class="btn" onclick="startGame()">开始新局</button>
@@ -1175,18 +1190,44 @@ function goToName(){
   document.getElementById('input-surname').value='';
   document.getElementById('input-givenname').value='';
   document.getElementById('input-courtesy').value='';
+  const role = ROLES[state.pendingRole];
+  const gs = document.getElementById('gender-select');
+  if(role.genderRelevant){
+    gs.style.display='block';
+    state.pendingGender = 'random';
+    document.querySelectorAll('#gender-grid .gender-btn').forEach(b=>{
+      b.classList.toggle('active', b.dataset.gender==='random');
+    });
+  } else {
+    gs.style.display='none';
+    state.pendingGender = 'random';
+  }
   showScreen('screen-name');
 }
+
+document.querySelectorAll('#gender-grid .gender-btn').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('#gender-grid .gender-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    state.pendingGender = b.dataset.gender;
+  };
+});
 
 function genName(){
   // 性别与女扮男装判定
   const role = ROLES[state.pendingRole];
   let gender = '男';
   let femaleDisguise = false;
-  if(role.genderRelevant){
-    const r = Math.random();
-    if(r < 0.4){ gender = '女'; }
-    if(r < 0.15){ gender = '男'; femaleDisguise = true; }
+  const sel = state.pendingGender || 'random';
+  if(sel === '男'){ gender = '男'; }
+  else if(sel === '女'){ gender = '女'; }
+  else if(sel === '女扮男装'){ gender = '男'; femaleDisguise = true; }
+  else { // random
+    if(role.genderRelevant){
+      const r = Math.random();
+      if(r < 0.4){ gender = '女'; }
+      if(r < 0.15){ gender = '男'; femaleDisguise = true; }
+    }
   }
   let surname = document.getElementById('input-surname').value.trim();
   let givenname = document.getElementById('input-givenname').value.trim();
