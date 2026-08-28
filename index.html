@@ -152,6 +152,7 @@ body {
       <button class="btn" id="btn-select-skill" onclick="selectSkill()" style="display:none;">❖ 自选特长</button>
       <button class="btn" id="btn-destiny" onclick="peekDestiny()" style="display:none;">✧ 窥探天命</button>
       <button class="btn" onclick="showHistory()">◈ 历史结局</button>
+      <button class="btn" onclick="showEventLog()">❖ 事件志</button>
       <button class="btn" id="btn-select-role" onclick="showRoleSelect()" disabled>◆ 开始新局</button>
       <button class="btn" id="btn-free-mode" onclick="toggleFreeMode()" style="display:none;">✦ 自由模式（全50开局）</button>
       <p class="subtitle" id="round-hint">（前 3 轮随机命运，之后可自选身份）</p>
@@ -247,6 +248,14 @@ body {
   <!-- 历史结局 -->
   <div class="screen" id="screen-history">
     <div class="scroll-area" id="history-content"></div>
+    <div class="bottom-btns">
+      <button class="btn" onclick="goHome()">← 返回主页</button>
+    </div>
+  </div>
+
+  <!-- 事件志 -->
+  <div class="screen" id="screen-eventlog">
+    <div class="scroll-area" id="eventlog-content"></div>
     <div class="bottom-btns">
       <button class="btn" onclick="goHome()">← 返回主页</button>
     </div>
@@ -1919,6 +1928,7 @@ function showEndingBranch(){
 }
 
 function saveHistory(ending, egg){
+  // --- 历史结局（原逻辑）---
   let arr = [];
   try { arr = JSON.parse(localStorage.getItem('guhistory')||'[]'); } catch(e){ arr=[]; }
   arr.unshift({
@@ -1932,6 +1942,46 @@ function saveHistory(ending, egg){
   });
   if(arr.length > 30) arr = arr.slice(0,30);
   localStorage.setItem('guhistory', JSON.stringify(arr));
+
+  // --- 事件志（新增）：每局 queue+history 快照 ---
+  // 把 state.queue 和 state.history 对齐合并成可读的事件条目
+  const roleKey = state.role;
+  const logEntries = state.queue.map((q, qi) => {
+    const h = state.history[qi] || null;
+    // 还原事件标题
+    let title = '', typeLabel = q.type;
+    if(q.type === 'core'){ const e = CORE_EVENTS[roleKey][q.idx]; title = '第' + (q.idx+1) + '回合·' + (e?e.title:'（主线）'); typeLabel='core'; }
+    else if(q.type === 'hidden'){ const e = HIDDEN_EVENTS[roleKey][q.idx]; title = (e?e.title:'（隐藏际遇）'); typeLabel='hidden'; }
+    else if(q.type === 'minor'){ const e = MINOR_EVENTS[q.idx]; title = '途遇·' + (e?e.title:'（小事件）'); typeLabel='minor'; }
+    else if(q.type === 'fate'){ const e = FATE_EVENTS[q.idx]; title = '命运·' + (e?e.title:'（命运之签）'); typeLabel='fate'; }
+    return {
+      type: typeLabel,
+      order: qi,
+      title: title,
+      choice: h ? h.choice : '',
+      result: h ? h.result : ''
+    };
+  });
+  const logEntry = {
+    id: 'L' + Date.now().toString(36) + Math.floor(Math.random()*1000).toString(36),
+    role: state.role, roleName: ROLES[state.role].name,
+    name: state.surname + state.givenname, courtesy: state.courtesy,
+    gender: state.femaleDisguise ? '男（？）' : state.gender,
+    ending: ending.name,
+    endingHidden: !!ending.hidden,
+    egg: egg ? egg.name : null,
+    skill: state.skill ? state.skill.name : null,
+    destinyCard: state.destinyCard ? state.destinyCard.name : null,
+    stats: Object.assign({}, state.stats),
+    time: new Date().toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}),
+    entries: logEntries
+  };
+  let logs = [];
+  try { logs = JSON.parse(localStorage.getItem('gueventlog')||'[]'); } catch(e){ logs=[]; }
+  logs.unshift(logEntry);
+  if(logs.length > 30) logs = logs.slice(0,30);
+  localStorage.setItem('gueventlog', JSON.stringify(logs));
+
   // 多周目解锁：记录不同结局（用于解锁判定）
   let endings = [];
   try { endings = JSON.parse(localStorage.getItem('gugame_endings')||'[]'); } catch(e){ endings=[]; }
@@ -1970,6 +2020,89 @@ function showHistory(){
   }
   showScreen('screen-history');
 }
+
+// ========== 事件志 ==========
+function showEventLog(){
+  let logs = [];
+  try { logs = JSON.parse(localStorage.getItem('gueventlog')||'[]'); } catch(e){ logs=[]; }
+  const box = document.getElementById('eventlog-content');
+  if(logs.length === 0){
+    box.innerHTML =
+      '<h2 style="color:var(--primary); text-align:center; margin:40px 0 12px;">❖ 事 件 志</h2>' +
+      '<p class="subtitle" style="text-align:center;">尚无记录。完成一局后，你选择过的所有主线、隐藏、途遇、命运事件，都会记在这里。</p>';
+    showScreen('screen-eventlog');
+    return;
+  }
+  const TYPE_META = {
+    core:   { icon:'◆', label:'主线',   color:'var(--primary)' },
+    hidden: { icon:'◇', label:'隐藏',   color:'var(--dark-red)' },
+    minor:  { icon:'·', label:'途遇',   color:'var(--muted)' },
+    fate:   { icon:'✦', label:'命运',   color:'var(--accent)' }
+  };
+  let html =
+    '<h2 style="color:var(--primary); text-align:center; margin:16px 0 12px;">❖ 事 件 志</h2>' +
+    '<p class="subtitle" style="text-align:center; color:var(--muted); margin-bottom:16px;">共记录 ' + logs.length + ' 局。点击任意卡片展开该局所有事件。</p>';
+  logs.forEach((log, li) => {
+    const statStr = '⚔' + log.stats.power + '  ⚘' + log.stats.fame + '  ❖' + log.stats.wealth + '  ☯' + log.stats.mind;
+    const extraTags = [];
+    if(log.skill) extraTags.push('特长「' + log.skill + '」');
+    if(log.destinyCard) extraTags.push('天命「' + log.destinyCard + '」');
+    if(log.egg) extraTags.push('彩蛋「' + log.egg + '」');
+    if(log.endingHidden) extraTags.push('<span style="color:var(--dark-red);">隐藏结局</span>');
+    const tagsStr = extraTags.length ? '<div style="font-size:12px; color:var(--accent); margin-top:4px;">' + extraTags.join(' · ') + '</div>' : '';
+
+    // 条目展开区内容（每一个事件）
+    let entriesHtml = '';
+    log.entries.forEach((en) => {
+      const meta = TYPE_META[en.type] || { icon:'·', label:'', color:'var(--text)' };
+      const choiceStr = en.choice ? ('<div class="e-choice">你：' + en.choice + '</div>') : '';
+      const resultStr = en.result ? ('<div class="e-result">' + en.result + '</div>') : '';
+      entriesHtml +=
+        '<div class="e-row">' +
+          '<span class="e-icon" style="color:' + meta.color + ';">' + meta.icon + '</span>' +
+          '<div class="e-body">' +
+            '<div class="e-title" style="color:' + meta.color + ';">' +
+              '<span class="e-tag" style="color:' + meta.color + ';">' + meta.label + '</span>' + en.title +
+            '</div>' +
+            choiceStr + resultStr +
+          '</div>' +
+        '</div>';
+    });
+
+    html +=
+      '<div class="history-item" onclick="var d=this.querySelector(\'.ev-detail\'); if(d){d.style.display = d.style.display===\'block\'?\'none\':\'block\';}">' +
+        '<div class="h-title">' + log.name + ' · ' + log.roleName + ' — ' + log.ending + '</div>' +
+        '<div class="h-detail">' +
+          log.time + '　字：' + log.courtesy + '　性别：' + log.gender + '<br>' + statStr + tagsStr +
+        '</div>' +
+        '<div class="ev-detail" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);">' +
+          entriesHtml +
+        '</div>' +
+      '</div>';
+  });
+
+  html += '<button class="btn" style="margin-top:16px;" onclick="if(confirm(\'清空所有事件志？（不会影响历史结局）\')){localStorage.removeItem(\'gueventlog\');showEventLog();}">清空事件志</button>';
+  box.innerHTML = html;
+  showScreen('screen-eventlog');
+}
+
+// ========== 事件志样式 ==========
+(function addEventLogCSS(){
+  if(document.getElementById('evlog-css')) return;
+  const s = document.createElement('style');
+  s.id = 'evlog-css';
+  s.textContent = `
+    .e-row { display:flex; gap:8px; padding:8px 0 8px 4px; border-bottom:1px dotted rgba(255,255,255,0.06); }
+    .e-icon { flex-shrink:0; width:18px; text-align:center; font-weight:bold; margin-top:2px; }
+    .e-body { flex:1; min-width:0; }
+    .e-title { font-size:14px; font-weight:600; margin-bottom:4px; letter-spacing:1px; }
+    .e-tag { display:inline-block; padding:0 6px; margin-right:6px; border:1px solid currentColor; border-radius:3px; font-size:11px; font-weight:400; opacity:0.85; vertical-align:1px; }
+    .e-choice { font-size:13px; color:var(--text); opacity:0.9; margin:3px 0 2px; line-height:1.55; }
+    .e-result { font-size:13px; color:var(--muted); line-height:1.6; white-space:pre-line; }
+    .ev-detail .e-row:last-child { border-bottom:none; }
+  `;
+  document.head.appendChild(s);
+})();
 
 // ========== 初始化 ==========
 (function init(){
