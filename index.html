@@ -982,17 +982,17 @@ const HIDDEN_EVENTS = {
 
 // ========== 隐藏命运结局（优先于普通结局） ==========
 const HIDDEN_FATE_ENDINGS = {
-  emperor: { name: '千古一帝', text: '后世帝王皆以你为楷模，你的治国方略被刻在宫殿墙壁上。史书用整整一卷写你，仍觉不够。', cond: s => s.power>=75 && s.fame>=65 && s.wealth>=55 && s.mind>=55 },
-  xia: { name: '剑仙', text: '江湖不再有你的身影，只有你的传说。有人说你已悟剑道极致，踏叶而去，不再食人间烟火。', cond: s => s.mind>=72 && s.power>=48 },
-  merchant: { name: '陶朱公再世', text: '你散尽家财，又白手起家，如此三次。后世商人把你和陶朱公并称，说"世人只知陶朱，不知有君"。', cond: s => s.wealth>=75 && s.mind>=55 },
-  doctor: { name: '活死人', text: '你救过的人太多，民间传说你其实早已死了，只是阎王不敢收。', cond: s => s.fame>=68 && s.mind>=55 }
+  emperor: { name: '千古一帝', text: '后世帝王皆以你为楷模，你的治国方略被刻在宫殿墙壁上。史书用整整一卷写你，仍觉不够。', cond: s => s.power>=65 && s.fame>=55 && s.wealth>=45 && s.mind>=48 },
+  xia: { name: '剑仙', text: '江湖不再有你的身影，只有你的传说。有人说你已悟剑道极致，踏叶而去，不再食人间烟火。', cond: s => s.mind>=62 && s.power>=42 },
+  merchant: { name: '陶朱公再世', text: '你散尽家财，又白手起家，如此三次。后世商人把你和陶朱公并称，说"世人只知陶朱，不知有君"。', cond: s => s.wealth>=65 && s.mind>=48 },
+  doctor: { name: '活死人', text: '你救过的人太多，民间传说你其实早已死了，只是阎王不敢收。', cond: s => s.fame>=58 && s.mind>=48 }
 };
 // 行为隐藏结局
 const HIDDEN_BEHAVIOR_ENDINGS = {
-  emperor: { name: '焚书', text: '你最后的诏书不是传位，而是命人将宫中所有史书烧掉。你说："朕做过什么，后人不必知道。"火焰烧了三天三夜。', cond: s => s.mind<=15 && s.power>=40 },
-  xia: { name: '断剑', text: '你最后将那柄断剑插在天机谷口，转身离开。从此江湖再无人见过你，只有天机谷口那截断剑，风吹雨打，百年不锈。', cond: s => s.mind>=65 && s.fame>=50 },
-  merchant: { name: '空船', text: '你变卖家产，买了一条空船，顺着江漂流而下。船靠岸时，人们发现里面只有一袋种子。', cond: s => s.wealth>=50 && s.mind>=65 },
-  doctor: { name: '医者不自医', text: '你治好了很多人，自己却死在那场瘟疫里。百姓为你立的碑上写着："活人无算，死于活人。"', cond: s => s.mind<=20 && s.fame>=50 }
+  emperor: { name: '焚书', text: '你最后的诏书不是传位，而是命人将宫中所有史书烧掉。你说："朕做过什么，后人不必知道。"火焰烧了三天三夜。', cond: s => s.mind<=18 && s.power>=38 },
+  xia: { name: '断剑', text: '你最后将那柄断剑插在天机谷口，转身离开。从此江湖再无人见过你，只有天机谷口那截断剑，风吹雨打，百年不锈。', cond: s => s.mind>=58 && s.fame>=45 },
+  merchant: { name: '空船', text: '你变卖家产，买了一条空船，顺着江漂流而下。船靠岸时，人们发现里面只有一袋种子。', cond: s => s.wealth>=45 && s.mind>=58 },
+  doctor: { name: '医者不自医', text: '你治好了很多人，自己却死在那场瘟疫里。百姓为你立的碑上写着："活人无算，死于活人。"', cond: s => s.mind<=22 && s.fame>=45 }
 };
 // 女扮男装彩蛋
 const DISGUISE_EGGS = {
@@ -1035,101 +1035,101 @@ function getDestinyHint(){
 // ========== 普通结局判定规则（按优先级，第一个匹配即生效） ==========
 const ENDING_RULES = {
   emperor: [
-    { name: '开国雄主', text: '革故鼎新，开创三百年基业。后世帝王祭天时，都要先拜你的画像。', cond: { power: 70, fame: 60, wealth: 45 } },
-    { name: '中兴之主', text: '四海宾服，史称中兴。后世史官写到你时，用了四个字："明君守成。"', cond: { power: 58, fame: 48 } },
-    { name: '仁君', text: '驾崩之日，京师罢市，万民恸哭。史书八字："仁德之主，民不能忘。"', cond: { fame: 55, mind: 50 } },
-    { name: '暴君', text: '你死时，宫中鸣钟，坊间有人笑出声。史书留下四字："桀纣之流。"', cond: { power: 52, fame: 30, fameMax: true } },
-    { name: '修道天子', text: '晚年痴迷方术，丹药而崩。你死的时候，丹炉还冒着烟。', cond: { mind: 25, mindMax: true } },
-    { name: '亡国之君', text: '九鼎易主，社稷倾颓。你坐在空荡荡的大殿里，看着新朝的旗帜升起。', cond: { power: 15, powerMax: true } },
-    { name: '傀儡皇帝', text: '虽居九五，实为提线木偶。你死的时候，手里还握着一道没盖玉玺的诏书。', cond: { power: 32, mind: 35, bothMax: true } },
+    { name: '开国雄主', text: '革故鼎新，开创三百年基业。后世帝王祭天时，都要先拜你的画像。', cond: { power: 60, fame: 50, wealth: 38 } },
+    { name: '中兴之主', text: '四海宾服，史称中兴。后世史官写到你时，用了四个字："明君守成。"', cond: { power: 50, fame: 42 } },
+    { name: '仁君', text: '驾崩之日，京师罢市，万民恸哭。史书八字："仁德之主，民不能忘。"', cond: { fame: 45, mind: 42 } },
+    { name: '暴君', text: '你死时，宫中鸣钟，坊间有人笑出声。史书留下四字："桀纣之流。"', cond: { power: 42, fame: 35, fameMax: true } },
+    { name: '修道天子', text: '晚年痴迷方术，丹药而崩。你死的时候，丹炉还冒着烟。', cond: { mind: 28, mindMax: true } },
+    { name: '亡国之君', text: '九鼎易主，社稷倾颓。你坐在空荡荡的大殿里，看着新朝的旗帜升起。', cond: { power: 18, powerMax: true } },
+    { name: '傀儡皇帝', text: '虽居九五，实为提线木偶。你死的时候，手里还握着一道没盖玉玺的诏书。', cond: { power: 35, mind: 38, bothMax: true } },
     { name: '隐帝', text: '禅位出家，不知所终。多年后，有人在终南山上，见过一个与你很像的樵夫。', cond: {} }
   ],
   xia: [
-    { name: '武林盟主', text: '号令天下，莫敢不从。你站在盟主位上，觉得风比从前更冷了。', cond: { power: 60, wealth: 45 } },
-    { name: '一代大侠', text: '侠之大者，为国为民。你的名字被写进话本，成为一代人的记忆。', cond: { fame: 55, mind: 50 } },
-    { name: '隐侠', text: '事了拂衣去，深藏身与名。江湖没有你的身影，但处处都有你的传说。', cond: { mind: 62, fame: 45 } },
-    { name: '殉道者', text: '为信念而死，重于泰山。你死的那天，天上下了一场大雨。', cond: { mind: 60, power: 30, powerMax: true } },
-    { name: '魔头', text: '江湖夜雨，闻其名而色变。你成了传说里的恶鬼，也成了自己最不想成为的人。', cond: { power: 55, fame: 25, fameMax: true } },
-    { name: '刺客', text: '十步杀一人，千里不留行。你死的时候，身边只有一把刀。', cond: { power: 45, mind: 25, mindMax: true } },
+    { name: '武林盟主', text: '号令天下，莫敢不从。你站在盟主位上，觉得风比从前更冷了。', cond: { power: 52, wealth: 38 } },
+    { name: '一代大侠', text: '侠之大者，为国为民。你的名字被写进话本，成为一代人的记忆。', cond: { fame: 48, mind: 45 } },
+    { name: '隐侠', text: '事了拂衣去，深藏身与名。江湖没有你的身影，但处处都有你的传说。', cond: { mind: 55, fame: 40 } },
+    { name: '殉道者', text: '为信念而死，重于泰山。你死的那天，天上下了一场大雨。', cond: { mind: 52, power: 32, powerMax: true } },
+    { name: '魔头', text: '江湖夜雨，闻其名而色变。你成了传说里的恶鬼，也成了自己最不想成为的人。', cond: { power: 48, fame: 28, fameMax: true } },
+    { name: '刺客', text: '十步杀一人，千里不留行。你死的时候，身边只有一把刀。', cond: { power: 40, mind: 28, mindMax: true } },
     { name: '游侠', text: '一箫一剑走江湖。你没留下名字，但路上的人记得你的箫声。', cond: {} }
   ],
   merchant: [
-    { name: '富可敌国', text: '天下财富，半出其门。你死的时候，账本堆满了三间屋子。', cond: { wealth: 70 } },
-    { name: '商圣', text: '后世商人供你为祖师。你的名字，成了财富的代名词。', cond: { wealth: 60, fame: 45 } },
-    { name: '红顶商人', text: '亦官亦商，煊赫一时。你倒台的那天，才知道自己一直都在刀尖上走路。', cond: { power: 50, wealth: 45 } },
-    { name: '走私巨枭', text: '海上一霸，官军莫敢近。你最后死在了自己的船上，面向大海。', cond: { wealth: 55, fame: 25, fameMax: true } },
-    { name: '大慈善家', text: '百年后，乡人仍念其名。你修的桥还在，你开的路还在。', cond: { fame: 50, mind: 55 } },
-    { name: '儒商', text: '贾而好儒，泽被乡里。你捐的学堂里，后来出了一个状元。', cond: { fame: 50, mind: 45 } },
-    { name: '乡绅', text: '叶落归根，一方之望。你死的时候，全村人都来送你。', cond: { wealth: 35 } },
-    { name: '破产流亡', text: '曾经富贵，皆成云烟。你在破庙里过夜时，想起自己曾经有三条商路。', cond: { wealth: 10, wealthMax: true } }
+    { name: '富可敌国', text: '天下财富，半出其门。你死的时候，账本堆满了三间屋子。', cond: { wealth: 62 } },
+    { name: '商圣', text: '后世商人供你为祖师。你的名字，成了财富的代名词。', cond: { wealth: 52, fame: 40 } },
+    { name: '红顶商人', text: '亦官亦商，煊赫一时。你倒台的那天，才知道自己一直都在刀尖上走路。', cond: { power: 45, wealth: 40 } },
+    { name: '走私巨枭', text: '海上一霸，官军莫敢近。你最后死在了自己的船上，面向大海。', cond: { wealth: 48, fame: 28, fameMax: true } },
+    { name: '大慈善家', text: '百年后，乡人仍念其名。你修的桥还在，你开的路还在。', cond: { fame: 45, mind: 48 } },
+    { name: '儒商', text: '贾而好儒，泽被乡里。你捐的学堂里，后来出了一个状元。', cond: { fame: 45, mind: 40 } },
+    { name: '乡绅', text: '叶落归根，一方之望。你死的时候，全村人都来送你。', cond: { wealth: 32 } },
+    { name: '破产流亡', text: '曾经富贵，皆成云烟。你在破庙里过夜时，想起自己曾经有三条商路。', cond: { wealth: 12, wealthMax: true } }
   ],
   official: [
-    { name: '名相', text: '辅佐天子，开一代治世。你的政令，影响了这个国家一百年。', cond: { power: 55, fame: 45 } },
-    { name: '权臣', text: '朝堂之上，一言九鼎。你死之后，皇帝在你的灵前站了很久，没有说话。', cond: { power: 58 } },
-    { name: '帝师', text: '天子待你以师礼，临终托孤。你死的时候，新帝跪在你的床前。', cond: { fame: 55, mind: 50 } },
-    { name: '清官', text: '两袖清风，百姓立生祠。你死的时候，家里只有三箱书。', cond: { fame: 55, wealth: 25, wealthMax: true } },
-    { name: '改革家', text: '厉行新政，虽千万人吾往矣。你没有成功，但你指出的路，后人走通了。', cond: { power: 45, mind: 50 } },
-    { name: '隐退著书', text: '辞官归乡，著书传世。你的书后来被刻在石头上，立在县学门口。', cond: { mind: 60 } },
-    { name: '贪官', text: '金银满屋，最终东窗事发。抄家的士兵打开你的地窖时，惊呆了。', cond: { wealth: 45, fame: 30, fameMax: true } },
+    { name: '名相', text: '辅佐天子，开一代治世。你的政令，影响了这个国家一百年。', cond: { power: 48, fame: 40 } },
+    { name: '权臣', text: '朝堂之上，一言九鼎。你死之后，皇帝在你的灵前站了很久，没有说话。', cond: { power: 50 } },
+    { name: '帝师', text: '天子待你以师礼，临终托孤。你死的时候，新帝跪在你的床前。', cond: { fame: 48, mind: 45 } },
+    { name: '清官', text: '两袖清风，百姓立生祠。你死的时候，家里只有三箱书。', cond: { fame: 48, wealth: 28, wealthMax: true } },
+    { name: '改革家', text: '厉行新政，虽千万人吾往矣。你没有成功，但你指出的路，后人走通了。', cond: { power: 40, mind: 45 } },
+    { name: '隐退著书', text: '辞官归乡，著书传世。你的书后来被刻在石头上，立在县学门口。', cond: { mind: 52 } },
+    { name: '贪官', text: '金银满屋，最终东窗事发。抄家的士兵打开你的地窖时，惊呆了。', cond: { wealth: 40, fame: 32, fameMax: true } },
     { name: '党争牺牲品', text: '朝局翻覆，你成了弃子。你被贬出京那天，没有一个人来送。', cond: {} }
   ],
   general: [
-    { name: '开国元勋', text: '从龙有功，封侯拜相。你的画像挂在凌烟阁上，供后人瞻仰。', cond: { power: 60, fame: 50 } },
-    { name: '名将', text: '战功赫赫，青史留名。你打的每一场仗，都被后人画成了图。', cond: { fame: 55, power: 45 } },
-    { name: '忠烈', text: '马革裹尸，朝廷追封。你的灵位被供在太庙里，和开国功臣在一起。', cond: { fame: 55, mind: 50 } },
-    { name: '军阀', text: '割据一方，朝廷莫能制。你死之后，你的地盘分裂成了五块。', cond: { power: 58, fame: 30, fameMax: true } },
-    { name: '叛将', text: '起兵反叛，或成或败。历史没有给你一个痛快。', cond: { power: 55, mind: 30, mindMax: true } },
-    { name: '马革裹尸', text: '战死沙场，名留千古。你死的时候，手里还握着半截旗杆。', cond: { fame: 50, mind: 25, mindMax: true } },
-    { name: '弃将', text: '鸟尽弓藏，被朝廷弃用。你死的时候，还在等一封永远不会来的调令。', cond: { power: 20, powerMax: true } },
+    { name: '开国元勋', text: '从龙有功，封侯拜相。你的画像挂在凌烟阁上，供后人瞻仰。', cond: { power: 52, fame: 42 } },
+    { name: '名将', text: '战功赫赫，青史留名。你打的每一场仗，都被后人画成了图。', cond: { fame: 48, power: 40 } },
+    { name: '忠烈', text: '马革裹尸，朝廷追封。你的灵位被供在太庙里，和开国功臣在一起。', cond: { fame: 48, mind: 45 } },
+    { name: '军阀', text: '割据一方，朝廷莫能制。你死之后，你的地盘分裂成了五块。', cond: { power: 50, fame: 32, fameMax: true } },
+    { name: '叛将', text: '起兵反叛，或成或败。历史没有给你一个痛快。', cond: { power: 48, mind: 32, mindMax: true } },
+    { name: '马革裹尸', text: '战死沙场，名留千古。你死的时候，手里还握着半截旗杆。', cond: { fame: 42, mind: 28, mindMax: true } },
+    { name: '弃将', text: '鸟尽弓藏，被朝廷弃用。你死的时候，还在等一封永远不会来的调令。', cond: { power: 22, powerMax: true } },
     { name: '功成身退', text: '解甲归田，得善终。你在自家院子里种了一棵枣树，每年秋天都结很多枣。', cond: {} }
   ],
   hermit: [
-    { name: '山中宰相', text: '隐居山中，天下大事皆问于你。你的茅屋前，经常停着朝中重臣的马车。', cond: { power: 45, fame: 50 } },
-    { name: '世外高人', text: '世人不知你姓名，只知山中有仙。', cond: { mind: 65, fame: 45 } },
-    { name: '门派宗师', text: '开宗立派，弟子满天下。你立的规矩，成了后来所有山门的规矩。', cond: { fame: 55, power: 40 } },
-    { name: '著书立说', text: '你留下的书，影响了后世数百年。', cond: { mind: 60, fame: 45 } },
-    { name: '隐侠', text: '虽隐居，仍暗中行侠。你救过的人，不知道你的名字，只知道山里有个好人。', cond: { fame: 50 } },
-    { name: '被迫出山', text: '终究没能躲开这红尘。你下山那天，回头看了三次。', cond: { power: 40 } },
+    { name: '山中宰相', text: '隐居山中，天下大事皆问于你。你的茅屋前，经常停着朝中重臣的马车。', cond: { power: 40, fame: 42 } },
+    { name: '世外高人', text: '世人不知你姓名，只知山中有仙。', cond: { mind: 55, fame: 40 } },
+    { name: '门派宗师', text: '开宗立派，弟子满天下。你立的规矩，成了后来所有山门的规矩。', cond: { fame: 48, power: 35 } },
+    { name: '著书立说', text: '你留下的书，影响了后世数百年。', cond: { mind: 52, fame: 40 } },
+    { name: '隐侠', text: '虽隐居，仍暗中行侠。你救过的人，不知道你的名字，只知道山里有个好人。', cond: { fame: 42 } },
+    { name: '被迫出山', text: '终究没能躲开这红尘。你下山那天，回头看了三次。', cond: { power: 35 } },
     { name: '老死山林', text: '无人知晓你的存在，你也不在乎。你死的时候，山里的花开得很好。', cond: {} }
   ],
   artisan: [
-    { name: '匠圣', text: '后世匠人供你为祖师。你的名字，成了"极致"的代名词。', cond: { fame: 60, mind: 50 } },
-    { name: '大匠', text: '你的名字和你的作品一起流传后世。后人看到你做的器物时，都会沉默很久。', cond: { fame: 55 } },
-    { name: '发明家', text: '你造出的东西改变了一个时代。你的名字被写进了工部志。', cond: { power: 50, fame: 45 } },
-    { name: '富匠', text: '以手艺发家，富甲一方。你的工坊里，同时开着一百个炉子。', cond: { wealth: 55 } },
-    { name: '门派创始人', text: '开宗立派，徒子徒孙遍布天下。你的技艺，成了后来所有匠人的必修课。', cond: { fame: 50, power: 45 } },
-    { name: '官营监造', text: '你在官府工坊中权倾一时。你经手的工程，没有一项不让人挑不出毛病。', cond: { power: 50 } },
-    { name: '隐匠', text: '你做的器物散落民间，无人知道出自你手。但懂行的人一看便知："这是一位大匠做的。"', cond: { mind: 55 } },
-    { name: '落魄匠人', text: '手艺再好，也敌不过时运。你死的时候，手边只有一把生锈的凿子。', cond: { wealth: 15, wealthMax: true } }
+    { name: '匠圣', text: '后世匠人供你为祖师。你的名字，成了"极致"的代名词。', cond: { fame: 52, mind: 45 } },
+    { name: '大匠', text: '你的名字和你的作品一起流传后世。后人看到你做的器物时，都会沉默很久。', cond: { fame: 48 } },
+    { name: '发明家', text: '你造出的东西改变了一个时代。你的名字被写进了工部志。', cond: { power: 42, fame: 40 } },
+    { name: '富匠', text: '以手艺发家，富甲一方。你的工坊里，同时开着一百个炉子。', cond: { wealth: 48 } },
+    { name: '门派创始人', text: '开宗立派，徒子徒孙遍布天下。你的技艺，成了后来所有匠人的必修课。', cond: { fame: 42, power: 40 } },
+    { name: '官营监造', text: '你在官府工坊中权倾一时。你经手的工程，没有一项不让人挑不出毛病。', cond: { power: 42 } },
+    { name: '隐匠', text: '你做的器物散落民间，无人知道出自你手。但懂行的人一看便知："这是一位大匠做的。"', cond: { mind: 48 } },
+    { name: '落魄匠人', text: '手艺再好，也敌不过时运。你死的时候，手边只有一把生锈的凿子。', cond: { wealth: 18, wealthMax: true } }
   ],
   doctor: [
-    { name: '神医', text: '世人称你"再世华佗"。你救过的人，多到你自己都数不清。', cond: { fame: 60, mind: 50 } },
-    { name: '仁医', text: '一生清贫，活人无数。你死的时候，十里八乡的人都来送你。', cond: { fame: 55, mind: 50 } },
-    { name: '隐世药王', text: '隐居深山，只有真正有缘人才能找到你。你死之后，你种的药草还在生长。', cond: { mind: 60, fame: 45 } },
-    { name: '御医', text: '出入宫闱，伴君如伴虎。你治好了皇帝的病，却治不好自己的心惊。', cond: { power: 50, wealth: 45 } },
-    { name: '邪教教主', text: '你以医道为名，建立起一个庞大的地下教派。你死之后，教众们还在等你的转世。', cond: { power: 55, fame: 30, fameMax: true } },
-    { name: '毒王', text: '以毒术横行，闻者色变。你死的时候，身上带着七种毒药，每一种都是你自己配的。', cond: { power: 55, mind: 30, mindMax: true } },
-    { name: '炼丹师', text: '沉迷丹道，最终服丹而亡。你死的时候，丹炉里的火还没有熄。', cond: { mind: 28, mindMax: true } },
+    { name: '神医', text: '世人称你"再世华佗"。你救过的人，多到你自己都数不清。', cond: { fame: 52, mind: 45 } },
+    { name: '仁医', text: '一生清贫，活人无数。你死的时候，十里八乡的人都来送你。', cond: { fame: 48, mind: 45 } },
+    { name: '隐世药王', text: '隐居深山，只有真正有缘人才能找到你。你死之后，你种的药草还在生长。', cond: { mind: 52, fame: 40 } },
+    { name: '御医', text: '出入宫闱，伴君如伴虎。你治好了皇帝的病，却治不好自己的心惊。', cond: { power: 42, wealth: 40 } },
+    { name: '邪教教主', text: '你以医道为名，建立起一个庞大的地下教派。你死之后，教众们还在等你的转世。', cond: { power: 48, fame: 32, fameMax: true } },
+    { name: '毒王', text: '以毒术横行，闻者色变。你死的时候，身上带着七种毒药，每一种都是你自己配的。', cond: { power: 48, mind: 32, mindMax: true } },
+    { name: '炼丹师', text: '沉迷丹道，最终服丹而亡。你死的时候，丹炉里的火还没有熄。', cond: { mind: 30, mindMax: true } },
     { name: '庸医误人', text: '医术不精，治死了不该治的人。你死的时候，那个人的家人来你坟前泼了一碗药。', cond: {} }
   ],
   actor: [
-    { name: '戏圣', text: '后世伶人供你为祖师。你的画像挂在每个戏班的后台，上香的人络绎不绝。', cond: { fame: 60, mind: 50 } },
-    { name: '名伶', text: '你的名字响彻大江南北。你演的每一出戏，都成了后来戏班的必学曲目。', cond: { fame: 55 } },
-    { name: '谏官', text: '以戏为谏，天子亦听你的话。你唱的戏文，有一半进了奏折。', cond: { fame: 50, power: 40 } },
-    { name: '民间史家', text: '你的话本成了后世研究这个时代的第一手史料。你记下的那些事，比正史更真实。', cond: { fame: 50, mind: 45 } },
-    { name: '情报头目', text: '戏台上下，都是你的耳目。你死之后，你经营的那张网才慢慢浮出水面。', cond: { power: 50, fame: 45 } },
-    { name: '戏班班主', text: '你把一个小戏班带成了天下第一。你死之后，戏班还在唱。', cond: { power: 45, fame: 45 } },
-    { name: '转行商贾', text: '你离开了戏台，却活得更安稳。只是偶尔路过戏园子时，你会停下脚步。', cond: { wealth: 50 } },
+    { name: '戏圣', text: '后世伶人供你为祖师。你的画像挂在每个戏班的后台，上香的人络绎不绝。', cond: { fame: 52, mind: 45 } },
+    { name: '名伶', text: '你的名字响彻大江南北。你演的每一出戏，都成了后来戏班的必学曲目。', cond: { fame: 48 } },
+    { name: '谏官', text: '以戏为谏，天子亦听你的话。你唱的戏文，有一半进了奏折。', cond: { fame: 42, power: 35 } },
+    { name: '民间史家', text: '你的话本成了后世研究这个时代的第一手史料。你记下的那些事，比正史更真实。', cond: { fame: 42, mind: 40 } },
+    { name: '情报头目', text: '戏台上下，都是你的耳目。你死之后，你经营的那张网才慢慢浮出水面。', cond: { power: 42, fame: 40 } },
+    { name: '戏班班主', text: '你把一个小戏班带成了天下第一。你死之后，戏班还在唱。', cond: { power: 40, fame: 40 } },
+    { name: '转行商贾', text: '你离开了戏台，却活得更安稳。只是偶尔路过戏园子时，你会停下脚步。', cond: { wealth: 42 } },
     { name: '殉道者', text: '为了一出戏，你丢了性命。你死的那天，戏台下的观众没有一个人走。', cond: {} }
   ],
   farmer: [
-    { name: '新朝元勋', text: '你从农民一路走到新朝开国功臣。你的画像挂在太庙里，但你自己却很少去看。', cond: { power: 55, fame: 45 } },
-    { name: '义军领袖', text: '你成了义军首领，名震天下。但你心里清楚，你最初只是想吃饱饭。', cond: { power: 50, fame: 45 } },
-    { name: '地方豪强', text: '你成了地方一霸，官府也得看你脸色。你死之后，你的儿子们把家产分了个干净。', cond: { power: 45, wealth: 40 } },
-    { name: '农学家', text: '你总结的农法被后世沿用。你写的那些经验，后来被刻在县衙门口。', cond: { fame: 50, mind: 45 } },
-    { name: '乡绅', text: '辛苦一辈子，置下家业，成了乡里敬重的人。你死的时候，你的田已经连成了片。', cond: { wealth: 45 } },
-    { name: '战死', text: '你死在了乱世的战场上。你的锄头，最后被铸成了一把刀。', cond: { power: 40, mind: 25, mindMax: true } },
-    { name: '流民', text: '天灾人祸，你最终也成了流民。你死在路边时，身上只有半块干粮。', cond: { wealth: 10, wealthMax: true } },
+    { name: '新朝元勋', text: '你从农民一路走到新朝开国功臣。你的画像挂在太庙里，但你自己却很少去看。', cond: { power: 48, fame: 40 } },
+    { name: '义军领袖', text: '你成了义军首领，名震天下。但你心里清楚，你最初只是想吃饱饭。', cond: { power: 42, fame: 40 } },
+    { name: '地方豪强', text: '你成了地方一霸，官府也得看你脸色。你死之后，你的儿子们把家产分了个干净。', cond: { power: 40, wealth: 35 } },
+    { name: '农学家', text: '你总结的农法被后世沿用。你写的那些经验，后来被刻在县衙门口。', cond: { fame: 42, mind: 40 } },
+    { name: '乡绅', text: '辛苦一辈子，置下家业，成了乡里敬重的人。你死的时候，你的田已经连成了片。', cond: { wealth: 38 } },
+    { name: '战死', text: '你死在了乱世的战场上。你的锄头，最后被铸成了一把刀。', cond: { power: 35, mind: 28, mindMax: true } },
+    { name: '流民', text: '天灾人祸，你最终也成了流民。你死在路边时，身上只有半块干粮。', cond: { wealth: 12, wealthMax: true } },
     { name: '普通农夫', text: '你活了一辈子，没惊动过谁，也未曾亏待过谁。你死的时候，田里的庄稼正在抽穗。', cond: {} }
   ]
 };
